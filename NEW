@@ -1,41 +1,14 @@
-This lists only the changes for the current release (v1.11) over the last
+This lists only the changes for the current release (v1.12) over the last
 version, since HISTORY is now quite big:
 
-  * write META.xml on our own to include proper license field
-  * streamlined euler()
-  * @k = hailstone() is about 3..4 times faster
-  * $k = scalar hailstone() is about 6..7 times faster
-  * primes() is about 1.5 times faster
-  * fix documentation for primes() (Thanx 
-  * add to_base($n, $base, [$alphabet]) (Thanx Tilghman Lesher!)
+* speed up fibonacci():
+  + by not making the argument a BigInt
+  + caching a few more numbers
+  + removing a few needless scalar computations
+* fix bug in fibonacci() missing a few intermidiate results
+* euler() just uses BigInt's fast bexp() method and is thus now MUHC faster
 
 #############################################################################
-
-v1.10:
-@k = hailstone(127): 5s (5.32 usr +  0.01 sys = 5.33 CPU) @  388/s (n=2070)
- @k = hailstone(47): 6s (5.30 usr +  0.02 sys = 5.32 CPU) @  173/s (n=921)
-     hailstone(127): 5s (5.32 usr +  0.01 sys = 5.33 CPU) @  488/s (n=2604)
-      hailstone(47): 6s (5.26 usr +  0.02 sys = 5.28 CPU) @  218/s (n=1156)
-            euler(): 5s (5.29 usr +  0.02 sys = 5.31 CPU) @   20/s (n=111)
-          euler(81): 6s (5.99 usr +  0.02 sys = 6.01 CPU) @    0.83/s (n=5)
-
-   @k = primes(100): 5s (5.26 usr +  0.02 sys = 5.28 CPU) @  114/s (n=605)
-        primes(100): 5s (5.31 usr +  0.02 sys = 5.33 CPU) @  113/s (n=607)
-  @k = primes(1000): 5s (5.16 usr +  0.02 sys = 5.18 CPU) @   11/s (n=59)
-       primes(1000): 5s (5.26 usr +  0.01 sys = 5.27 CPU) @   11/s (n=60)
-
-v1.11:
-@k = hailstone(127): 6s (5.31 usr +  0.01 sys = 5.32 CPU) @ 1698/s (n=9036)
- @k = hailstone(47): 5s (5.29 usr +  0.02 sys = 5.31 CPU) @  803/s (n=4266)
-     hailstone(127): 6s (5.28 usr +  0.01 sys = 5.29 CPU) @ 2795/s (n=14789)
-      hailstone(47): 5s (5.32 usr +  0.01 sys = 5.33 CPU) @ 1386/s (n=7389)
-            euler(): 5s (5.26 usr +  0.01 sys = 5.27 CPU) @   21/s (n=111)
-          euler(81): 5s (5.97 usr +  0.02 sys = 5.99 CPU) @    0.83/s (n=5)
-
-   @k = primes(100): 6s (5.26 usr +  0.01 sys = 5.27 CPU) @  154/s (n=816)
-        primes(100): 5s (5.24 usr +  0.01 sys = 5.25 CPU) @  162/s (n=855)
-  @k = primes(1000): 5s (5.29 usr +  0.00 sys = 5.29 CPU) @   15/s (n=79)
-       primes(1000): 5s (5.32 usr +  0.01 sys = 5.33 CPU) @   15/s (n=82)
 
 Have fun!
 
