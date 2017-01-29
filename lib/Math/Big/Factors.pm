@@ -1,14 +1,9 @@
-#!/usr/bin/perl -w
-
 #############################################################################
 # Math/Big/Factors.pm -- factor big numbers into prime factors
-#
-# Copyright (C) 2001 by Tels. All rights reserved.
-#############################################################################
 
 package Math::Big::Factors;
 use vars qw($VERSION);
-$VERSION = 1.00;    # Current version of this package
+$VERSION = 1.01;    # Current version of this package
 require  5.005;     # requires this Perl version or later
 
 use Math::BigInt;
@@ -57,7 +52,7 @@ sub wheel
     {
     push @wheel,$i if !defined $primes[$i]; $i += 2;    # skip even ones
     }
-  return \@wheel;
+  \@wheel;
   }
  
 sub _transform_wheel
@@ -115,7 +110,7 @@ sub _transform_wheel
     $wheel[$i+$length] = $wheel[$i];
     $i++;
     }
-  return ($ws,\@wheel);
+  ($ws,\@wheel);
   }
 
 sub factors_wheel
@@ -177,13 +172,16 @@ sub factors_wheel
     last;
     }
   push @factors,$x if $x != 1 || $n == 1;
-  return @factors;
+  @factors;
   }
 
 sub factor
   {
   # later: factor ( n => $n, algorithmn => 'wheel', order => 3 );
   }
+
+1;
+__END__
 
 #############################################################################
 
@@ -254,7 +252,7 @@ to hear about how my code helps you ;)
 Quite a lot of ideas from other people, especially D. E. Knuth, have been used,
 thank you!
 
-Tels http://bloodgate.com 2001.
+Tels http://bloodgate.com 2001-2004.
 
 =cut
 

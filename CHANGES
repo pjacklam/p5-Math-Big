@@ -3,13 +3,6 @@ Complete version history
 ========================
 
 ############################################################################## 
-Math::Roman:
-
-2001-02-17 1.02: require 5_005;
-2001-04-14 1.03: fixed as_number() to return BigInt 
-2001-05-07 1.04: got rid of C&P in overload section
-
-############################################################################## 
 Math::Big:
 
 2001-03-17 1.00: first version with primes(), fibonacci(), base()
@@ -30,17 +23,26 @@ Math::Big:
 2003-12-11 1.09 Tels 
  * require Math::BigInt v1.67 
  * factorial() uses simple BigInt bfac() for speed
+2004-08-13 1.10 Tels 161 tests 
+ * __END__ in Big.pm, remove shebang line
+ * removed needless return statements for more speed
+ * log() now simple calls BigFloat log for speed (it was unusable
+   slow before)
+ * hailstone() is between two and three times faster
+ * pi() is slightly faster by caching two objects for '5' and '236'
+ * require Math::BigInt v1.72
+ * arctan(), tan(), sin(), cos() etc are now about 10% faster
+ * arcsin($x) were $x != 0 was broken
 
 ############################################################################## 
 Math::Big::Factors:
 
 2001-06-15 1.00: first version from Math::Big
+2004-08-13 1.01: cleanups, remove shebang line and needless return statements
 
 ############################################################################## 
-Math::BigInt::Constant:
-
-Is now a separate CPAN package. Please see
-L<http://search.cpan.org/search?dist=Math-BigInt-Constant>.
+Math::BigInt::Constant and Math::Roman are now separate CPAN packages. Please
+see L<http://search.cpan.org/>.
 
 Please send me test-reports, your experiences with this and your ideas - I love
 to hear about my work!

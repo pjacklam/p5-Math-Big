@@ -1,6 +1,46 @@
-This lists only the changes for the current release (v1.09) over the last
+This lists only the changes for the current release (v1.10) over the last
 version, since HISTORY is now quite big:
 
-* require Math::BigInt v1.67
-* factorial() uses simple BigInt bfac() for speed
+* __END__ in Big.pm and Factorial.pm, remove shebang lines
+* removed needless return statements for more speed
+* log() now simple calls BigFloat log for speed (it was unusable
+  slow before)
+* hailstone() is between two and three times faster
+* pi() is faster by caching two objects for '5' and '236'
+* require Math::BigInt v1.72
+* fixed "Germain" prime example in examples/bigprimes.pl and added some more
+* arctan(), tan(), sin(), cos() etc are now about 10% faster
+* arcsin($x) were $x != 0 was broken
+
+#############################################################################
+Math::Big v1.09:
+      arctan("0.5"): 5s ( 5.04 usr +  0.01 sys =  5.05 CPU) @  8.71/s (n=44)
+        arctan(0.5): 5s ( 5.04 usr +  0.01 sys =  5.05 CPU) @  8.71/s (n=44)
+        hailstone(): 5s ( 5.06 usr +  0.03 sys =  5.09 CPU) @  2.55/s (n=13)
+ scalar hailstone(): 5s ( 5.30 usr +  0.01 sys =  5.31 CPU) @  2.26/s (n=12)
+             pi(10): 5s ( 5.24 usr +  0.02 sys =  5.26 CPU) @ 37.83/s (n=199)
+            pi(100): 5s ( 5.05 usr +  0.02 sys =  5.07 CPU) @  4.73/s (n=24)
+
+         cos("0.5"): 6s ( 5.30 usr +  0.02 sys =  5.32 CPU) @ 33.46/s (n=178)
+           cos(0.5): 5s ( 5.27 usr +  0.02 sys =  5.29 CPU) @ 33.65/s (n=178)
+         sin("0.5"): 5s ( 5.31 usr +  0.02 sys =  5.33 CPU) @ 32.83/s (n=175)
+           sin(0.5): 5s ( 5.18 usr +  0.01 sys =  5.19 CPU) @ 32.95/s (n=171)
+         tan("0.2"): 6s ( 5.32 usr +  0.01 sys =  5.33 CPU) @ 14.82/s (n=79)
+           tan(0.2): 6s ( 5.31 usr +  0.02 sys =  5.33 CPU) @ 14.82/s (n=79)
+
+Math::Big v1.10:
+      arctan("0.5"): 5s ( 4.99 usr +  0.02 sys =  5.01 CPU) @  8.78/s (n=44)
+        arctan(0.5): 5s ( 4.99 usr +  0.02 sys =  5.01 CPU) @  8.78/s (n=44)
+        hailstone(): 5s ( 5.10 usr +  0.01 sys =  5.11 CPU) @  4.89/s (n=25)
+ scalar hailstone(): 5s ( 5.06 usr +  0.01 sys =  5.07 CPU) @  6.31/s (n=32)
+             pi(10): 5s ( 5.22 usr +  0.01 sys =  5.23 CPU) @ 39.20/s (n=205)
+            pi(100): 5s ( 5.17 usr +  0.02 sys =  5.19 CPU) @  4.82/s (n=25)
+         
+         cos("0.5"): 5s ( 5.24 usr +  0.02 sys =  5.26 CPU) @ 36.31/s (n=191)
+           cos(0.5): 5s ( 5.21 usr +  0.02 sys =  5.23 CPU) @ 36.52/s (n=191)
+         sin("0.5"): 6s ( 5.29 usr +  0.02 sys =  5.31 CPU) @ 35.40/s (n=188)
+           sin(0.5): 6s ( 5.26 usr +  0.01 sys =  5.27 CPU) @ 35.67/s (n=188)
+         tan("0.2"): 5s ( 5.33 usr +  0.02 sys =  5.35 CPU) @ 16.82/s (n=90)
+           tan(0.2): 5s ( 5.26 usr +  0.01 sys =  5.27 CPU) @ 16.89/s (n=89)
+
 
