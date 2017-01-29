@@ -2,7 +2,7 @@
 
 use Test::More;
 use strict;
-   
+
 my $tests;
 
 BEGIN
@@ -24,4 +24,3 @@ SKIP:
   pod_file_ok( '../lib/Math/Big.pm' );
   pod_file_ok( '../lib/Math/Big/Factors.pm' );
   }
-

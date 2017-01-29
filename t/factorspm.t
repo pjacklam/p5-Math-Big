@@ -3,7 +3,7 @@
 use strict;
 use Test;
 
-BEGIN 
+BEGIN
   {
   $| = 1;
   # chdir 't' if -d 't';
@@ -16,17 +16,17 @@ use Math::Big::Factors;
 
 my (@args,$ref,$func,$argnum,$try,$x,$y,$z,$ans,@ans,$ans1);
 $| = 1;
-while (my $line = <DATA>) 
+while (my $line = <DATA>)
   {
   next if $line =~ /^#/;
   chop $line;
-  if ($line =~ s/^&//) 
+  if ($line =~ s/^&//)
     {
     # format: '&subroutine:number_of_arguments
     ($func,$argnum) = split /:/,$line;
     $ref = 0; $ref = 1 if $func =~ s/_ref$//;
     }
-  else 
+  else
     {
     @args = split(/:/,$line,99);
 
@@ -45,16 +45,16 @@ while (my $line = <DATA>)
       {
       $try .= "'$args[$i]',";
       }
-    $try .= ");"; 
+    $try .= ");";
     eval $try;
     splice @args,0,$argnum;
     $ans1 = ""; foreach (@args) { $ans1 .= " $_" }
-    $ans = ""; 
+    $ans = "";
     foreach my $c (@ans)
       {
       # functions that return an array ref
       if (ref($c) eq 'ARRAY')
-        { 
+        {
         foreach my $h (@$c)
           {
           $ans .= " $h";
@@ -63,7 +63,7 @@ while (my $line = <DATA>)
       else
         {
         $ans .= " $c";
-        } 
+        }
       }
     print "# Tried: '$try'\n" if !ok ($ans,$ans1);
     }

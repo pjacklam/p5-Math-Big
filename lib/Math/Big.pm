@@ -3,16 +3,16 @@
 
 package Math::Big;
 
-require  5.006002;	# anything lower is simple untested
+require 5.006002;	# anything lower is simple untested
 
 use strict;
 use warnings;
 
-use Math::BigInt;
+use Math::BigInt '1.97';
 use Math::BigFloat;
 use Exporter;
 
-our $VERSION   = '1.13';
+our $VERSION   = '1.14';
 our @ISA       = qw( Exporter );
 our @EXPORT_OK = qw( primes fibonacci base hailstone factorial
                      euler bernoulli pi log
