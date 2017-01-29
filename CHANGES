@@ -27,6 +27,9 @@ Math::Big:
 2002-08-13 1.08: pi() finally works (thanx to Robert Jaeger)
 		 require BigInt v1.61
 		 some more tests
+2003-12-11 1.09 Tels 
+ * require Math::BigInt v1.67 
+ * factorial() uses simple BigInt bfac() for speed
 
 ############################################################################## 
 Math::Big::Factors:
