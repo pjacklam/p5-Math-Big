@@ -8,7 +8,7 @@
 
 package Math::Big;
 use vars qw($VERSION);
-$VERSION = 1.07;    # Current version of this package
+$VERSION = 1.08;    # Current version of this package
 require  5.005;     # requires this Perl version or later
 
 use Math::BigInt;
@@ -795,78 +795,20 @@ sub log
   return $log->round($d-1);
   }
 
+my $four = Math::BigFloat->new(4);
+my $sixteen = Math::BigFloat->new(16);
+
 sub pi
   {
-  # use Ramanujan I for calculatng PI
-  # gives about 14 digits for every round
+  # calculate PI (as suggested by Robert Creager)
   my $digits = abs(shift || 1024);
 
-  # some constants
-  my $k1 = Math::BigInt->new(545140134);
-  my $k2 = Math::BigInt->new(13591409);
-  my $k3 = Math::BigInt->new(640320);
-  my $sqrt_k3 = Math::BigFloat->new('800.199975');
-  my $k4 = Math::BigInt->new(100100025);
-  my $k5 = Math::BigInt->new(327843840);
-  my $k6 = Math::BigFloat->new(53360);
-  
-  # pi = k6 * sqrt(k3) / S;
-  $k6 *= $sqrt_k3;
+  my $one = Math::BigFloat->new(1);
 
-  #                                  ( (6n)! * (k2 + n*k1)
-  # S = sum over (n .. oo) -1 ** n * ------------------------------------ 
-  #                                  (n! ** 3) * (3n)! * ((8*k4*k5) ** n)
-
-  # starting with n == 0 means -1 ** 0 => 0, so start is n == 1
-
-  my $n = Math::BigInt->new(1);
-  my $sign = 0;					 # first term is -1 ** 1 => -
-  my $m = $digits / Math::BigInt->new(14); $m++; # nr of rounds
-  my $n6f = Math::BigInt->new(720);	# 6n! => 6! => 720
-  my $n6  = Math::BigInt->new(7);	# 6n => 6*1 => 6 (+1 for next loop)
-  my $k12 = $k2 + $k1;			# k2 + 1*k1 => $k2 + $k1
-  my $nf  = Math::BigInt->new(1);	# n! = 1! => 1
-  my $n3  = Math::BigInt->new(4);	# n*3 = 3 +1 for next loop
-  my $n3f  = Math::BigInt->new(6);	# (n*3)! = 3! => 6
-  my $k4k58 = $k4*$k5*8;		# to multiply each round
-  my $k4k58n = $k4k58->copy();		# ** 1 stays the same
-  my $nfp3;
-  my $S  = Math::BigFloat->new(0);
-  my $i; my $f;
-  print "k1 $k1\n";
-  print "k2 $k2\n";
-  print "k3 $k3\n";
-  print "k4 $k4\n";
-  print "k5 $k5\n";
-  print "k6 $k6\n";
-  print "doing $m rounds\n";
-  while ($n < $m)
-    {
-    $f = Math::BigFloat->new($n6 * $k12);
-    $f->bdiv( Math::BigFloat->new($nfp3*$n3f*$k4k58n), $digits+5);
-    # $S += ($n6 * $k12) / ($nfp3*$n3f*$k4k58n);
-    if ($sign == 0) { $S += $f; } else { $S -= $f; }
-    $sign = 1-$sign;					# flip sign
-    
-    $n++;
-    # update (6n)!
-    for ($i = 0; $i<6;$i++) { $n6f *= $n6++; }
-    # update k2 + n*k1
-    $k12 += $k1;
-    # update n! ** 3
-    $nf *= $n; $nfp3 = $nf*$nf*$nf;
-
-    # update $n3
-    for ($i = 0; $i<3;$i++) { $n3f *= $n3++; }
-    # update $k4k58n
-    $k4k58n *= $k4k58;
-    print "n=$n 6n!=$n6f k2+n*k1=$k12 n!3=$nfp3 3n!=$n3f\n (8*k4*k5)**n=$k4k58n\n S: $S\n";
-    sleep(1);
-    }
-  print "S: $S\n";
-  my $pi = $k6 / $S;
-  $pi->round($digits);
-  return $pi;
+   my $d = $digits+5;
+   my $pi =  $sixteen * arctan( scalar $one->copy()->bdiv('5',$d), $d )
+              - $four * arctan( scalar $one->copy()->bdiv('239',$d),$d );
+  $pi->bround($digits+1);
   }
 
 #############################################################################
