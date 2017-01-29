@@ -2,19 +2,21 @@
 # Math/Big/Factors.pm -- factor big numbers into prime factors
 
 package Math::Big::Factors;
-use vars qw($VERSION);
-$VERSION = 1.02;    # Current version of this package
+
 require  5.006002;  # requires this Perl version or later
+
+use strict;
+use warnings;
 
 use Math::BigInt;
 use Math::BigFloat;
 use Math::Big;
 use Exporter;
-@ISA = qw( Exporter );
-@EXPORT_OK = qw( wheel factors_wheel
-               );
-#@EXPORT = qw( );
-use strict;
+
+our $VERSION   = '1.13';
+our @ISA       = qw( Exporter );
+our @EXPORT_OK = qw( wheel factors_wheel
+                  );
 
 sub wheel
   {
@@ -54,7 +56,7 @@ sub wheel
     }
   \@wheel;
   }
- 
+
 sub _transform_wheel
   {
   # from a given prime-wheel, calculate a increment table that can be used
@@ -101,7 +103,7 @@ sub _transform_wheel
   #print "last: ",$add->[-1],"\n";
   $wheel[$border+$length-1] = 1+$mod-$add->[-1];
   $wheel[$border+$length*2-1] = $wheel[$border+$length-1];
- 
+
   $i = $border + 1;
   # now fill in the rest
   while ($i < $length+$border-1)
@@ -181,9 +183,12 @@ sub _factor
   }
 
 1;
+
 __END__
 
 #############################################################################
+
+=pod
 
 =head1 NAME
 
@@ -196,8 +201,8 @@ Math::Big::Factors - factor big numbers into prime factors using different algor
     $wheel	= wheel (4);			# prime number wheel of 2,3,5,7
     print $wheel->[0],$wheel->[1],$wheel->[2],$wheel->[3],"\n";
 
-    @factors	= factor_wheel(19*71*59*3,1);	# using prime wheel of order 1
-    @factors	= factor_wheel(19*71*59*3,7);	# using prime wheel of order 7
+    @factors	= factors_wheel(19*71*59*3,1);	# using prime wheel of order 1
+    @factors	= factors_wheel(19*71*59*3,7);	# using prime wheel of order 7
 
 =head1 REQUIRES
 
@@ -206,7 +211,7 @@ perl5.005, Exporter, Math::BigInt, Math::BigFloat, Math::Big
 =head1 EXPORTS
 
 Exports nothing on default, but can export C<wheel()>, C<factor()>,
-C<factor_wheel()>;
+C<factors_wheel()>;
 
 =head1 DESCRIPTION
 
@@ -214,9 +219,11 @@ This module contains some routines that may come in handy when you want to
 factor big numbers into prime factors.
 examples.
 
-=head1 METHODS
+=head1 FUNCTIONS
 
-=head2 B<wheel()>
+=over
+
+=item wheel()
 
 	$wheel = wheel($o);
 
@@ -231,13 +238,52 @@ small numbers the computation of the wheel of order 7 may actually take
 longer than the factorization, but anything that has more than 10 digits will
 usually benefit from order 7.
 
-=head2 B<factors_wheel()>
+=item factors_wheel()
 
 Factor a number into its prime factors and return a list of factors.
 
+=back
+
 =head1 BUGS
 
-None discovered yet.
+Please report any bugs or feature requests to
+C<bug-math-big at rt.cpan.org>, or through the web interface at
+L<https://rt.cpan.org/Ticket/Create.html?Queue=Math-Big>
+(requires login).
+We will be notified, and then you'll automatically be notified of progress on
+your bug as I make changes.
+
+=head1 SUPPORT
+
+You can find documentation for this module with the perldoc command.
+
+    perldoc Math::Big::Factors
+
+You can also look for information at:
+
+=over 4
+
+=item * RT: CPAN's request tracker
+
+L<https://rt.cpan.org/Public/Dist/Display.html?Name=Math-Big>
+
+=item * AnnoCPAN: Annotated CPAN documentation
+
+L<http://annocpan.org/dist/Math-Big>
+
+=item * CPAN Ratings
+
+L<http://cpanratings.perl.org/dist/Math-Big>
+
+=item * Search CPAN
+
+L<http://search.cpan.org/dist/Math-Big/>
+
+=item * CPAN Testers Matrix
+
+L<http://matrix.cpantesters.org/?dist=Math-Big>
+
+=back
 
 =head1 LICENSE
 
@@ -246,14 +292,16 @@ the same terms as Perl itself.
 
 =head1 AUTHOR
 
-If you use this module in one of your projects, then please email me. I want
-to hear about how my code helps you ;)
+=over
 
-Quite a lot of ideas from other people, especially D. E. Knuth, have been used,
-thank you!
+=item *
 
 Tels http://bloodgate.com 2001-2007.
 
-=cut
+=item *
 
-1;
+Peter John Acklam E<lt>pjacklam@online.noE<gt> 2016.
+
+=back
+
+=cut
