@@ -21,9 +21,12 @@ Math::Big:
 			arctan, arctanh, arcsin, arcsinh,
 		 moved: wheel, factor_wheel => Math::Big::Factorial
 2001-07-09 1.05: version increase for CPAN release
-2001-07-09 1.07: fixed testsuite to play nice with newest BigInt
+2002-27-03 1.07: fixed testsuite to play nice with newest BigInt
 		 small doc fixes
 		 require v1.56, since v1.55 is broken on Windows
+2002-08-13 1.08: pi() finally works (thanx to Robert Jaeger)
+		 require BigInt v1.61
+		 some more tests
 
 ############################################################################## 
 Math::Big::Factors:

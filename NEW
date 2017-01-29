@@ -1,7 +1,5 @@
-This lists only the changes for the current release (v1.07) over the last
+This lists only the changes for the current release (v1.08) over the last
 version, since HISTORY is now quite big:
 
-* fixed typo in doc spotted by Mark Overmeer
-* removed some left-over debug printouts, whoops
-* documented that Math::BigInt::bfac() is faster than Math::Big::factorial()
-* broke out Math::BigInt::Constant to extra package
+* pi() finally works
+* require Math::BigInt 1.61 since v1.60 was borken
