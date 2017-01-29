@@ -1,15 +1,1 @@
-This lists only the changes for the current release (v1.12) over the last
-version, since HISTORY is now quite big:
-
-* speed up fibonacci():
-  + by not making the argument a BigInt
-  + caching a few more numbers
-  + removing a few needless scalar computations
-* fix bug in fibonacci() missing a few intermidiate results
-* euler() just uses BigInt's fast bexp() method and is thus now MUHC faster
-
-#############################################################################
-
-Have fun!
-
-Tels
+For the list of recent changes see the CHANGES file.

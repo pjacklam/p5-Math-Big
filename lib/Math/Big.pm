@@ -2,92 +2,71 @@
 # Math/Big.pm -- usefull routines with Big numbers (BigInt/BigFloat)
 
 package Math::Big;
-use vars qw(@ISA $VERSION @EXPORT_OK);
-use strict;
-$VERSION = '1.12';	# Current version of this package
+
 require  5.006002;	# anything lower is simple untested
+
+use strict;
+use warnings;
 
 use Math::BigInt;
 use Math::BigFloat;
 use Exporter;
-@ISA = qw( Exporter );
-@EXPORT_OK = qw( primes fibonacci base hailstone factorial
-		 euler bernoulli pi log
-		 tan cos sin cosh sinh arctan arctanh arcsin arcsinh
-               );
 
-use vars qw/@F/;				# for fibonacci()
+our $VERSION   = '1.13';
+our @ISA       = qw( Exporter );
+our @EXPORT_OK = qw( primes fibonacci base hailstone factorial
+                     euler bernoulli pi log
+                     tan cos sin cosh sinh arctan arctanh arcsin arcsinh
+                  );
+our @F;						# for fibonacci()
 
 # some often used constants:
-my $four = Math::BigFloat->new(4);
+my $four    = Math::BigFloat->new(4);
 my $sixteen = Math::BigFloat->new(16);
-my $fone = Math::BigFloat->bone();		# pi
-my $one = Math::BigInt->bone();			# hailstone, sin, cos etc
-my $two = Math::BigInt->new(2);			# hailstone, sin, cos etc
-my $three = Math::BigInt->new(3);		# hailstone
-   
-my $five = Math::BigFloat->new(5);		# for pi
+my $fone    = Math::BigFloat->bone();		# pi
+my $one     = Math::BigInt->bone();		# hailstone, sin, cos etc
+my $two     = Math::BigInt->new(2);		# hailstone, sin, cos etc
+my $three   = Math::BigInt->new(3);		# hailstone
+
+my $five         = Math::BigFloat->new(5);	# for pi
 my $twothreenine = Math::BigFloat->new(239);	# for pi
 
-sub primes
-  {
-  my $amount = shift; $amount = 1000 if !defined $amount;
-  $amount = Math::BigInt->new($amount) unless ref $amount;
+# In scalar context this returns the prime count (# of primes <= N).
+# In array context it returns a list of primes from 2 to N.
+sub primes {
+  my $end = shift;
+  return unless defined $end;
+  $end = $end->numify() if ref($end) =~ /^Math::Big/;
+  if ($end < 2) { return !wantarray ? Math::BigInt->bzero() : (); }
+  if ($end < 3) { return !wantarray ? $one->copy : ($two->copy); }
+  if ($end < 5) { return !wantarray ? $two->copy : ($two->copy, $three->copy); }
 
-  return (Math::BigInt->new(2)) if $amount < $three;
-  
-  $amount++;  
-
-  # any not defined number is prime, 0,1 are not, but 2 is
-  my @primes = (1,1,0); 
-  my $prime = $three->copy();			# start
-  my $r = 0; my $a = $amount->numify();
-  for (my $i = 3; $i < $a; $i++)		# int version
-    {
-    $primes[$i] = $r; $r = 1-$r;
+  $end-- unless ($end & 1);
+  my $s_end = $end >> 1;
+  my $whole = int( ($end>>1) / 15);
+  # Be conservative.  This would result in terabytes of array output.
+  die "Cannot return $end primes!" if $whole > 1_145_324_612;  # ~32 GB string
+  my $sieve = "100010010010110" . "011010010010110" x $whole;
+  substr($sieve, $s_end+1) = ''; # Clip to the right number of entries
+  my ($n, $limit) = ( 7, int(sqrt($end)) );
+  while ( $n <= $limit ) {
+    for (my $s = ($n*$n) >> 1; $s <= $s_end; $s += $n) {
+      substr($sieve, $s, 1) = '1';
     }
-  my ($cur,$add);
-  # find primes
-  OUTER:
-  while ($prime <= $amount)
-    {
-    # find first unmarked, it is the next prime
-    $cur = $prime;
-    while ($primes[$cur])
-      {
-      $cur += $two; last OUTER if $cur >= $amount;	# no more to do
-      }
-    # $cur is now new prime
-    # now strike out all multiples of $cur
-    $add = $cur * $two;
-    $prime = $cur + $two;			# next round start two higher
-    $cur += $add;
-    while ($cur <= $amount)
-      {
-      $primes[$cur] = 1; $cur += $add;
-      }
-    }
-
-  if (!wantarray)
-    {
-    my $n = 0;
-    for my $p (@primes)
-      {
-      $n++ if $p == 0;
-      }
-    return Math::BigInt->new($n);
-    }
-
-  my @real_primes; my $i = 0;
-  while ($i < scalar @primes)
-    {
-    push @real_primes, Math::BigInt->new($i) if $primes[$i] == 0;
-    $i ++;
-    }
-
-  @real_primes;
+    do { $n += 2 } while substr($sieve, $n>>1, 1);
   }
-  
+
+  return Math::BigInt->new(1 + $sieve =~ tr/0//) if !wantarray;
+
+  my @primes = (2, 3, 5);
+  $n = 7-2;
+  foreach my $s (split("0", substr($sieve, 3), -1)) {
+    $n += 2 + 2 * length($s);
+    push @primes, $n if $n <= $end;
+  }
+  return map { Math::BigInt->new($_) } @primes;
+}
+
 sub fibonacci
   {
   my $n = shift; return unless defined $n;
@@ -109,7 +88,7 @@ sub fibonacci
     # will be too big, anyway)
     $n = $n->numify() if ref($n);
 
-    my @fib = (Math::BigInt::bzero(),Math::BigInt::bone(),Math::BigInt::bone);
+    my @fib = (Math::BigInt -> bzero(),Math::BigInt -> bone(),Math::BigInt -> bone);
     my $i = 3;							# no BigInt
     while ($i <= $n)
       {
@@ -132,7 +111,7 @@ BEGIN
   #     0,1,2,3,4,5,6,7, 8, 9, 10,11,12, 13, 14, 15, 16, 17,  18,  19,  20,
   @F = (0,1,1,2,3,5,8,13,21,34,55,89,144,233,377,610,987,1597,2584,4181,6765,
   #     21,
-        10946, 17711, 28657, 46368, 75025, 121393, 196418, 317811, 514229, 
+        10946, 17711, 28657, 46368, 75025, 121393, 196418, 317811, 514229,
   #     30,
         832040, 1346269, 2178309, 3524578, 5702887, 9227465, 14930352,
   #     37,                                                 42,
@@ -156,11 +135,11 @@ sub _fibonacci_fast
   {
   my $x = shift; $x = $x->numify() if ref($x);
   return $F[$x] if $x < @F;
- 
+
   # Knuth, TAOCR Vol 1, Third Edition, p. 81
   # F(n+m) = Fm * Fn+1 + Fm-1 * Fn
 
-  # if m is set to n+1, we get: 
+  # if m is set to n+1, we get:
   # F(n+n+1) = F(n+1) * Fn+1 + Fn * Fn
   # F(n*2+1) = F(n+1) ^ 2 + Fn ^ 2
 
@@ -168,11 +147,11 @@ sub _fibonacci_fast
   # Fortunately:
   # Fx+1 = F(x) + F(x-1)
   # when x is even, then are x+1 and x-1 odd and can be calculated by the
-  # same means, and from this we get Fx. 
+  # same means, and from this we get Fx.
 
   # starting with level 0 at Fn we fill a hash with the different n we need
   # to calculate all Fn of the previous level. Here is an example for F1000:
-  
+
   # To calculate F1000, we need F999 and F1001 (since 1000 is even)
   # To calculate F999, we need F((999-1)/2) and F((999+1)/2), this are 499
   # and 500. Sine for F1001 we need 500 and 501, we need F(500), F(501) and
@@ -188,7 +167,7 @@ sub _fibonacci_fast
   #   0        1         2           3    and so on
   # 1000 ->   999   ->  499 <-  ->  249
   #    |	|---->  500  |
-  #    |-->  1001   ->  501 <-  ->  250    
+  #    |-->  1001   ->  501 <-  ->  250
   #                       |------>  251
 
   my @fibo;
@@ -223,16 +202,16 @@ sub _fibonacci_fast
           $fibo[$level-1]->{$t} = undef; $t--; $t /= 2;			# $t is odd
           $fibo[$level]->{$t} = undef; $fibo[$level]->{$t+1} = undef;
           $high = 1 if $t+1 >= @F;	# any value not in table?
-          } 
+          }
 	$t = $f+1;
         if (!exists $fibo[$level-1]->{$t})
           {
           $fibo[$level-1]->{$t} = undef; $t--; $t /= 2;			# $t is odd
           $fibo[$level]->{$t} = undef; $fibo[$level]->{$t+1} = undef;
           $high = 1 if $t+1 >= @F;	# any value not in table?
-          } 
+          }
 #        print "$f even: ",$f-1," ",$f+1," in level ",$level-1,"\n";
-        } 
+        }
       else
         {
         # else add ($_-1)/2and ($_-1)/2 + 1 to this level
@@ -262,7 +241,7 @@ sub _fibonacci_fast
       {
       next if ($f & 1) == 0;
       $t = $f-1; $t /= 2; my $t1 = $t+1;
-      $t = $fibo[$level+1]->{$t}; 
+      $t = $fibo[$level+1]->{$t};
       $t1 = $fibo[$level+1]->{$t1};
       #$fibo_level->{$f} = $t*$t+$t1*$t1;
       $fibo_level->{$f} = $t->copy->bmul($t)->badd($t1->copy()->bmul($t1));
@@ -305,9 +284,9 @@ sub to_base
   my ($x, $base, $alphabet) = @_;
 
   $x = Math::BigInt->new($x) unless ref $x;
- 
+
   return '0' if $x->is_zero();
- 
+
   # setup defaults:
   $base = 2 unless defined $base;
   my @digits = $alphabet ? split //, $alphabet : ('0' .. '9', 'A' .. 'Z');
@@ -326,7 +305,7 @@ sub to_base
 
   my $o = $x->copy();
   my $r;
- 
+
   my $result = '';
   while (!$o->is_zero)
     {
@@ -344,12 +323,12 @@ sub hailstone
   my ($n) = @_;
 
   $n = Math::BigInt->new($n) unless ref $n;
- 
+
   return if $n->is_nan() || $n->is_negative();
- 
+
   # Use the Math::BigInt lib directly for more speed, since all numbers
   # involved are positive integers.
- 
+
   my $lib = Math::BigInt->config()->{lib};
   $n = $n->{value};
   my $three_ = $three->{value};
@@ -427,11 +406,11 @@ sub bernoulli
   # first 40. So bernoulli(41) will fail for now.
 
   my $n = shift;
- 
+
   return if $n < 0;
   my @table_1 = ( 1,1, -1,2 );					# 0, 1
-  my @table = ( 			
-                1,6, -1,30, 1,42, -1,30, 5,66, -691,2730,	# 2, 4, 
+  my @table = (
+                1,6, -1,30, 1,42, -1,30, 5,66, -691,2730,	# 2, 4,
                 7,6, -3617,510, 43867,798,
 		-174611,330,
                 854513,138,
@@ -479,7 +458,7 @@ sub euler
   # rounds it. Default is 42.
   my $x = $_[0];
   $x = Math::BigFloat->new($x) if !ref($x) || (!$x->isa('Math::BigFloat'));
-  
+
   $x->bexp($_[1]);
   }
 
@@ -494,13 +473,13 @@ sub sin
   my $d = abs(shift || 42); $d = abs($d)+1;
 
   $x = Math::BigFloat->new($x) if ref($x) ne 'Math::BigFloat';
-  
+
   # taylor:      x^3   x^5   x^7   x^9
   #    sin = x - --- + --- - --- + --- ...
   # 		  3!    5!    7!    9!
-  
+
   # difference for each term is thus x^2 and 1,2
- 
+
   my $sin = $x->copy(); my $last = 0;
   my $sign = 1;				# start with -=
   my $x2 = $x * $x; 			# X ^ 2, difference between terms
@@ -536,13 +515,13 @@ sub cos
   my $d = abs(shift || 42); $d = abs($d)+1;
 
   $x = Math::BigFloat->new($x) if ref($x) ne 'Math::BigFloat';
-  
+
   # taylor:      x^2   x^4   x^6   x^8
   #    cos = 1 - --- + --- - --- + --- ...
   # 		  2!    4!    6!    8!
-  
+
   # difference for each term is thus x^2 and 1,2
- 
+
   my $cos = Math::BigFloat->bone(); my $last = 0;
   my $over = $x * $x;			# X ^ 2
   my $x2 = $over->copy();		# X ^ 2; difference between terms
@@ -578,22 +557,22 @@ sub tan
   my $d = abs(shift || 42); $d = abs($d)+1;
 
   $x = Math::BigFloat->new($x) if ref($x) ne 'Math::BigFloat';
-  
-  # taylor:  1         2            3            4           5  
+
+  # taylor:  1         2            3            4           5
 
   #		      x^3          x^5          x^7          x^9
   #    tan = x + 1 * -----  + 2 * ----- + 17 * ----- + 62 * ----- ...
   # 		       3           15           315         2835
   #
-  #  2^2n * ( 2^2n - 1) * Bn * x^(2n-1)          256*255 * 1 * x^7   17 
+  #  2^2n * ( 2^2n - 1) * Bn * x^(2n-1)          256*255 * 1 * x^7   17
   #  ---------------------------------- : n=4:  ----------------- = --- * x^7
   #               (2n)!                            40320 * 30       315
-  # 
+  #
   # 8! = 40320, B4 (Bernoully number 4) = 1/30
 
   # for each term we need: 2^2n, but if we have 2^2(n-1) we use n = (n-1)*2
-  # 2 copy, 7 bmul, 2 bdiv, 3 badd, 1 bernoulli 
- 
+  # 2 copy, 7 bmul, 2 bdiv, 3 badd, 1 bernoulli
+
   my $tan = $x->copy(); my $last = 0;
   my $x2 = $x*$x;
   my $over = $x2*$x;
@@ -628,15 +607,15 @@ sub sinh
   my $d = abs(shift || 42); $d = abs($d)+1;
 
   $x = Math::BigFloat->new($x) if ref($x) ne 'Math::BigFloat';
-  
+
   # taylor:       x^3   x^5   x^7
   #    sinh = x + --- + --- + --- ...
   # 	           3!    5!    7!
-  
+
   # difference for each term is thus x^2 and 1,2
- 
+
   my $sinh = $x->copy(); my $last = 0;
-  my $x2 = $x*$x; 
+  my $x2 = $x*$x;
   my $over = $x2 * $x; my $below = Math::BigFloat->new(6); my $factorial = Math::BigFloat->new(4);
   while ($sinh->bcmp($last)) # no $x-$last > $diff because bdiv() limit on accuracy
     {
@@ -660,15 +639,15 @@ sub cosh
   my $d = abs(shift || 42); $d = abs($d)+1;
 
   $x = Math::BigFloat->new($x) if ref($x) ne 'Math::BigFloat';
-  
+
   # taylor:       x^2   x^4   x^6
   #    cosh = x + --- + --- + --- ...
   # 	           2!    4!    6!
-  
+
   # difference for each term is thus x^2 and 1,2
- 
+
   my $cosh = Math::BigFloat->bone(); my $last = 0;
-  my $x2 = $x*$x; 
+  my $x2 = $x*$x;
   my $over = $x2; my $below = Math::BigFloat->new(); my $factorial = Math::BigFloat->new(3);
   while ($cosh->bcmp($last)) # no $x-$last > $diff because bdiv() limit on accuracy
     {
@@ -692,16 +671,16 @@ sub arctan
   my $d = abs(shift || 42); $d = abs($d)+1;
 
   $x = Math::BigFloat->new($x) if ref($x) ne 'Math::BigFloat';
-  
+
   # taylor:      x^3   x^5   x^7   x^9
   # arctan = x - --- + --- - --- + --- ...
   # 		  3     5    7      9
-  
+
   # difference for each term is thus x^2 and 2:
   # 2 copy, 1 bmul, 1 badd, 1 bdiv
- 
+
   my $arctan = $x->copy(); my $last = 0;
-  my $x2 = $x*$x; 
+  my $x2 = $x*$x;
   my $over = $x2*$x; my $below = Math::BigFloat->new(3); my $add = Math::BigFloat->new(2);
   my $sign = 1;
   while ($arctan->bcmp($last)) # no $x-$last > $diff because bdiv() limit on A
@@ -733,16 +712,16 @@ sub arctanh
   my $d = abs(shift || 42); $d = abs($d)+1;
 
   $x = Math::BigFloat->new($x) if ref($x) ne 'Math::BigFloat';
-  
+
   # taylor:       x^3   x^5   x^7   x^9
   # arctanh = x + --- + --- + --- + --- + ...
   # 	 	   3     5    7      9
-  
+
   # difference for each term is thus x^2 and 2:
   # 2 copy, 1 bmul, 1 badd, 1 bdiv
- 
+
   my $arctanh = $x->copy(); my $last = 0;
-  my $x2 = $x*$x; 
+  my $x2 = $x*$x;
   my $over = $x2*$x; my $below = Math::BigFloat->new(3); my $add = Math::BigFloat->new(2);
   while ($arctanh->bcmp($last)) # no $x-$last > $diff because bdiv() limit on A
     {
@@ -765,17 +744,17 @@ sub arcsin
   my $d = abs(shift || 42); $d = abs($d)+1;
 
   $x = Math::BigFloat->new($x) if ref($x) ne 'Math::BigFloat';
-  
-  # taylor:      1 * x^3   1 * 3 * x^5   1 * 3 * 5 * x^7  
+
+  # taylor:      1 * x^3   1 * 3 * x^5   1 * 3 * 5 * x^7
   # arcsin = x + ------- + ----------- + --------------- + ...
   # 		 2 *  3    2 * 4 *  5    2 * 4 * 6 *   7
-  
+
   # difference for each term is thus x^2 and two muls (fac1, fac2):
   # 3 copy, 3 bmul, 1 bdiv, 3 badd
 
   my $arcsin = $x->copy(); my $last = 0;
-  my $x2 = $x*$x; 
-  my $over = $x2*$x; my $below = Math::BigFloat->new(6); 
+  my $x2 = $x*$x;
+  my $over = $x2*$x; my $below = Math::BigFloat->new(6);
   my $fac1 = Math::BigFloat->new(1);
   my $fac2 = Math::BigFloat->new(2);
   my $two = Math::BigFloat->new(2);
@@ -802,17 +781,17 @@ sub arcsinh
   my $d = abs(shift || 42); $d = abs($d)+1;
 
   $x = Math::BigFloat->new($x) if ref($x) ne 'Math::BigFloat';
-  
-  # taylor:      1 * x^3   1 * 3 * x^5   1 * 3 * 5 * x^7  
+
+  # taylor:      1 * x^3   1 * 3 * x^5   1 * 3 * 5 * x^7
   # arcsin = x - ------- + ----------- - --------------- + ...
   # 		 2 *  3    2 * 4 *  5    2 * 4 * 6 *   7
-  
+
   # difference for each term is thus x^2 and two muls (fac1, fac2):
   # 3 copy, 3 bmul, 1 bdiv, 3 badd
 
   my $arcsinh = $x->copy(); my $last = 0;
-  my $x2 = $x*$x; my $sign = 0; 
-  my $over = $x2*$x; my $below = 6; 
+  my $x2 = $x*$x; my $sign = 0;
+  my $over = $x2*$x; my $below = 6;
   my $fac1 = Math::BigInt->new(1);
   my $fac2 = Math::BigInt->new(2);
   while ($arcsinh ne $last) # no $x-$last > $diff because bdiv() limit on A
@@ -866,9 +845,12 @@ sub pi
   }
 
 1;
+
 __END__
 
 #############################################################################
+
+=pod
 
 =head1 NAME
 
@@ -880,14 +862,14 @@ Math::Big - routines (cos,sin,primes,hailstone,euler,fibbonaci etc) with big num
       cos sin tan euler bernoulli arctan arcsin pi/;
 
     @primes	= primes(100);		# first 100 primes
-    $prime	= primes(100);		# 100th prime
+    $count	= primes(100);		# number of primes <= 100
     @fib	= fibonacci (100);	# first 100 fibonacci numbers
     $fib_1000	= fibonacci (1000);	# 1000th fibonacci number
     $hailstone	= hailstone (1000);	# length of sequence
     @hailstone	= hailstone (127);	# the entire sequence
-    
+
     $factorial	= factorial(1000);	# factorial 1000!
- 
+
     $e = euler(1,64); 			# e to 64 digits
 
     $b3 = bernoulli(3);
@@ -922,21 +904,22 @@ This module contains some routines that may come in handy when you want to
 do some math with really, really big (or small) numbers. These are primarily
 examples.
 
-=head1 METHODS
+=head1 FUNCTIONS
 
-=head2 B<primes()>
+=over
+
+=item primes()
 
 	@primes = primes($n);
 	$primes = primes($n);
 
 Calculates all the primes below N and returns them as array. In scalar context
-returns the number of primes below N.
-  
-This uses an optimized version of the B<Sieve of Eratosthenes>, which takes
-half of the time and half of the space, but is still O(N). Or in other words,
-quite slow.
+returns the prime count of N (the number of primes less than or equal to N).
 
-=head2 B<fibonacci()>
+This uses an optimized version of the B<Sieve of Eratosthenes>, which takes
+half of the time and half of the space, but is still O(N).
+
+=item fibonacci()
 
 	@fib = fibonacci($n);
 	$fib = fibonacci($n);
@@ -948,12 +931,12 @@ The scalar context version uses an ultra-fast conquer-divide style algorithm
 to calculate the result and is many times faster than the straightforward way
 of calculating the linear sum.
 
-=head2 B<hailstone()>
+=item hailstone()
 
 	@hail = hailstone($n);		# sequence
 	$hail = hailstone($n);		# length of sequence
 
-Calculates the I<Hailstone> sequence for the number N. This sequence is defined 
+Calculates the I<Hailstone> sequence for the number N. This sequence is defined
 as follows:
 
 	while (N != 0)
@@ -971,7 +954,7 @@ as follows:
 It is not yet proven whether for every N the sequence reaches 1, but it
 apparently does so. The number of steps is somewhat chaotically.
 
-=head2 B<base()>
+=item base()
 
 	($n,$a) = base($number,$base);
 
@@ -984,7 +967,7 @@ Reduces a number to C<$base> to the C<$n>th power plus C<$a>. Example:
 
 This will print 150 and 42.
 
-=head2 B<to_base()>
+=item to_base()
 
 	$string = to_base($number,$base);
 
@@ -999,15 +982,15 @@ Examples:
 	print to_base(15,16);		# F
 	print to_base(31,16);		# 1F
 
-=head2 B<factorial()>
+=item factorial()
 
 	$n = factorial($number);
 
 Calculate C<n!> for C<n >= 0>.
 
-Uses internally Math::BigInt's bfac() method. 
+Uses internally Math::BigInt's bfac() method.
 
-=head2 B<bernoulli()>
+=item bernoulli()
 
 	$b = bernoulli($n);
 	($c,$d) = bernoulli($n);	# $b = $c/$d
@@ -1015,74 +998,74 @@ Uses internally Math::BigInt's bfac() method.
 Calculate the Nth number in the I<Bernoulli> series. Only the first 40 are
 defined for now.
 
-=head2 B<euler()>
+=item euler()
 
 	$e = euler($x,$d);
 
 Calculate I<Euler's constant> to the power of $x (usual 1), to $d digits.
 Defaults to 1 and 42 digits.
 
-=head2 B<sin()>
+=item sin()
 
 	$sin = sin($x,$d);
 
 Calculate I<sinus> of C<$x>, to C<$d> digits.
 
-=head2 B<cos()>
+=item cos()
 
 	$cos = cos($x,$d);
 
 Calculate I<cosinus> of C<$x>, to C<$d> digits.
 
-=head2 B<tan()>
+=item tan()
 
 	$tan = tan($x,$d);
 
 Calculate I<tangens> of C<$x>, to C<$d> digits.
 
-=head2 B<arctan()>
+=item arctan()
 
 	$arctan = arctan($x,$d);
 
 Calculate I<arcus tangens> of C<$x>, to C<$d> digits.
 
-=head2 B<arctanh()>
+=item arctanh()
 
 	$arctanh = arctanh($x,$d);
 
 Calculate I<arcus tangens hyperbolicus> of C<$x>, to C<$d> digits.
 
-=head2 B<arcsin()>
+=item arcsin()
 
 	$arcsin = arcsin($x,$d);
 
 Calculate I<arcus sinus> of C<$x>, to C<$d> digits.
 
-=head2 B<arcsinh()>
+=item arcsinh()
 
 	$arcsinh = arcsinh($x,$d);
 
 Calculate I<arcus sinus hyperbolicus> of C<$x>, to C<$d> digits.
 
-=head2 B<cosh()>
+=item cosh()
 
 	$cosh = cosh($x,$d);
 
 Calculate I<cosinus hyperbolicus> of C<$x>, to C<$d> digits.
 
-=head2 B<sinh()>
+=item sinh()
 
 	$sinh = sinh($x,$d);
 
 Calculate I<sinus hyperbolicus> of $<$x>, to C<$d> digits.
 
-=head2 B<pi()>
+=item pi()
 
 	$pi = pi($N);
 
 The number PI to C<$N> digits after the dot.
 
-=head2 B<log()>
+=item log()
 
 	$log = log($number,$base,$A);
 
@@ -1090,11 +1073,13 @@ Calculates the logarithmn of C<$number> to base C<$base>, with C<$A> digits accu
 and returns a new number as the result (leaving C<$number> alone).
 
 BigInts are promoted to BigFloats, meaning you will never get a truncated
-integer result like when using C<Math::BigInt::blog>.
+integer result like when using C<Math::BigInt->blog()>.
 
-=head1 BUGS
+=back
 
-=over 2
+=head1 CAVEATS
+
+=over 4
 
 =item *
 
@@ -1118,6 +1103,47 @@ If you know of an algorithmn to calculate them, please drop me a note.
 
 =back
 
+=head1 BUGS
+
+Please report any bugs or feature requests to
+C<bug-math-big at rt.cpan.org>, or through the web interface at
+L<https://rt.cpan.org/Ticket/Create.html?Queue=Math-Big>
+(requires login).
+We will be notified, and then you'll automatically be notified of progress on
+your bug as I make changes.
+
+=head1 SUPPORT
+
+You can find documentation for this module with the perldoc command.
+
+    perldoc Math::Big
+
+You can also look for information at:
+
+=over 4
+
+=item * RT: CPAN's request tracker
+
+L<https://rt.cpan.org/Public/Dist/Display.html?Name=Math-Big>
+
+=item * AnnoCPAN: Annotated CPAN documentation
+
+L<http://annocpan.org/dist/Math-Big>
+
+=item * CPAN Ratings
+
+L<http://cpanratings.perl.org/dist/Math-Big>
+
+=item * Search CPAN
+
+L<http://search.cpan.org/dist/Math-Big/>
+
+=item * CPAN Testers Matrix
+
+L<http://matrix.cpantesters.org/?dist=Math-Big>
+
+=back
+
 =head1 LICENSE
 
 This program is free software; you may redistribute it and/or modify it under
@@ -1125,14 +1151,16 @@ the same terms as Perl itself.
 
 =head1 AUTHOR
 
-If you use this module in one of your projects, then please email me. I want
-to hear about how my code helps you ;)
+=over
 
-Quite a lot of ideas from other people, especially D. E. Knuth, have been used,
-thank you!
+=item *
 
-Tels http://bloodgate.com 2001 - 2007.
+Tels http://bloodgate.com 2001-2007.
+
+=item *
+
+Peter John Acklam E<lt>pjacklam@online.noE<gt> 2016.
+
+=back
 
 =cut
-
-1;
