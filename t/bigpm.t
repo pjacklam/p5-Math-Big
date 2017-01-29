@@ -8,7 +8,7 @@ BEGIN
   $| = 1;
   chdir 't' if -d 't';
   unshift @INC, '../lib'; # for running manually
-  plan tests => 126;
+  plan tests => 133;
   }
 
 use Math::BigInt;
@@ -45,8 +45,11 @@ while (my $line = <DATA>)
       {
       $try .= "'$args[$i]',";
       }
-    $try .= ");"; 
+    $try .= ");";
+    #print "$try\n";
+    $@ = '';
     eval $try;
+    print "$@" if $@;
     splice @args,0,$argnum;
     $ans1 = ""; foreach (@args) { $ans1 .= " $_" }
     $ans = ""; 
@@ -214,16 +217,19 @@ __END__
 0:20:0
 &arcsin:2
 0:10:0
+0:10:0
 0:20:0
+# bug in v1.09
+0.2:0:0.200702337406163975738994757897144122627179
 &arcsinh:2
 0:10:0
 0:20:0
 &pi:1
 10:3.1415926536
 50:3.14159265358979323846264338327950288419716939937511
-#&log:2
-#10:10:1
-#100:100:1
-#1:100:0
-#1:2:0
-#100:10:2
+&log:2
+10:10:1
+100:100:1
+1:100:0
+1:2:0
+100:10:2

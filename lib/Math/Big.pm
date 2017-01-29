@@ -1,15 +1,10 @@
-#!/usr/bin/perl -w
-
 #############################################################################
 # Math/Big.pm -- usefull routines with Big numbers (BigInt/BigFloat)
-#
-# Copyright (C) 2001 by Tels. All rights reserved.
-#############################################################################
 
 package Math::Big;
 use vars qw($VERSION);
-$VERSION = 1.09;    # Current version of this package
-require  5.005;     # requires this Perl version or later
+$VERSION = '1.10';	# Current version of this package
+require  5.005;		# requires this Perl version or later
 
 use Math::BigInt;
 use Math::BigFloat;
@@ -20,10 +15,20 @@ use Exporter;
 		 tan cos sin cosh sinh arctan arctanh arcsin arcsinh
 		 log
                );
-#@EXPORT = qw( );
 use strict;
 
 use vars qw/@F/;
+
+# some often used constants:
+my $four = Math::BigFloat->new(4);
+my $sixteen = Math::BigFloat->new(16);
+my $fone = Math::BigFloat->bone();		# pi
+my $one = Math::BigInt->bone();			# hailstone, sin, cos etc
+my $two = Math::BigInt->new(2);			# hailstone, sin, cos etc
+my $three = Math::BigInt->new(3);		# hailstone
+   
+my $five = Math::BigFloat->new(5);
+my $twothreenine = Math::BigFloat->new(239);
 
 sub primes
   {
@@ -69,7 +74,7 @@ sub primes
     push @real_primes, Math::BigInt->new($i) if $primes[$i] == 0;
     $i ++;
     }
-  return @real_primes;
+  @real_primes;
   }
   
 sub fibonacci
@@ -93,7 +98,7 @@ sub fibonacci
   #####################
   # scalar context
 
-  return fibonacci_fast($n);
+  fibonacci_fast($n);
   }
 
 my $F;
@@ -226,24 +231,8 @@ sub fibonacci_fast
       }
     }
 #  print "sum $sum level $l => ",$sum/$l," steps $steps adds $add muls $mul\n";
-  return $fibo[0]->{$x};
+  $fibo[0]->{$x};
   }
-
-#sub fibonacci_slow
-#  {
-#  my $n = shift;
-#  $n = Math::BigInt->new($n) if !ref($n);
-#  
-#  return $F[$n] if $n < @F;
-#  my $x = Math::BigInt::bone();
-#  my $t = $x; my $y = $t;
-#  my $i = Math::BigInt->new(3);
-#  while ($i <= $n)
-#    {
-#    $t = $x + $y; $x = $y; $y = $t; $i++;
-#    }
-#  return $t;
-#  }
 
 sub base
   {
@@ -261,42 +250,55 @@ sub base
     $trial *= $base; $n++;
     }
   $trial /= $base; $a = $number - $trial;
-  return ($n,$a);
+  ($n,$a);
   }
 
 sub hailstone
   {
   # return in list context the hailstone sequence, in scalar context the
   # number of steps to reach 1
-
   my ($n) = @_;
 
   $n = Math::BigInt->new($n) unless ref $n;
  
   return if $n->is_nan() || $n < 0;
 
-  my $one = Math::BigInt->new(1);
   if (wantarray)
     {
     my @seq;
-    while ($n != $one)
+    while (!$n->is_one())
       {
-      push @seq, $n;
-      ($n->is_odd()) ? ($n = $n * 3 + 1) : ($n = $n / 2);
+      push @seq, $n->copy();
+      if ($n->is_odd())
+        {
+        $n->bmul($three)->badd($one);
+        }
+      else
+        {
+        $n->bdiv($two);
+        }
+      #($n->is_odd()) ? ($n = $n * 3 + 1) : ($n = $n / 2);
       }
     push @seq, Math::BigInt->new(1);
     return @seq;
     }
-  else
+
+  my $i = 1;
+  while (!$n->is_one())
     {
-    my $i = Math::BigInt->new(1);
-    while ($n != $one)
+    $i++;
+    #($n->is_odd()) ? ($n = $n * 3 + 1) : ($n = $n / 2);
+    if ($n->is_odd())
       {
-      $i++;
-      ($n->is_odd()) ? ($n = $n * 3 + 1) : ($n = $n / 2);
+      $n->bmul($three)->badd($one);
       }
-    return $i;
+    else
+      {
+      $n->bdiv($two);
+      }
+    #($n->is_odd()) ? ($n = $n * 3 + 1) : ($n = $n / 2);
     }
+  Math::BigInt->new($i);
   }
 
 sub factorial
@@ -346,8 +348,8 @@ sub bernoulli
     }
   elsif ($n & 1 == 1)
     {
-    $a = Math::BigFloat::bzero();
-    $b = Math::BigFloat->new(1);
+    $a = Math::BigFloat->bzero();
+    $b = Math::BigFloat->bone();
     }
   else
     {
@@ -356,7 +358,7 @@ sub bernoulli
     $a = Math::BigFloat->new($table[$n]);
     $b = Math::BigFloat->new($table[$n+1]);
     }
-  return wantarray ? ($a,$b): $a/$b;
+  wantarray ? ($a,$b): $a/$b;
   }
 
 sub euler
@@ -370,7 +372,6 @@ sub euler
   my $d = abs(shift || 42); $d = abs($d)+1;
 
   $x = Math::BigFloat->new($x) if ref($x) ne 'Math::BigFloat';
-  my $diff = Math::BigFloat->new('1e-'.$d);
   
   # row:	  x    x^2   x^3   x^4
   #	 e = 1 + --- + --- + --- + --- ...
@@ -380,16 +381,16 @@ sub euler
   # 2 copy, 2 mul, 2 add, 1 div
   
   my $e = Math::BigFloat->new(1); my $last = 0;
-  my $over = $x->copy(); my $below = 1; my $factorial = Math::BigInt->new(2);
+  my $over = $x->copy(); my $below = Math::BigFloat->bone(); my $factorial = Math::BigFloat->new(2);
   # no $e-$last > $diff because bdiv() limit on accuracy
-  while ($e ne $last)
+  while ($e->bcmp($last) != 0)
     {
     $last = $e->copy();
     $e += $over->copy()->bdiv($below,$d);
     $over *= $x if !$x->is_one();
     $below *= $factorial; $factorial++;
     }
-  return $e->round($d-1);
+  $e->bround($d-1);
   }
 
 sub sin
@@ -399,11 +400,10 @@ sub sin
   # Second argument is accuracy (number of significant digits), it
   # stops when at least so much plus one digits are 'stable' and then
   # rounds it. Default is 42.
-  my $x = shift || 0;
+  my $x = shift; $x = 0 if !defined $x;
   my $d = abs(shift || 42); $d = abs($d)+1;
 
   $x = Math::BigFloat->new($x) if ref($x) ne 'Math::BigFloat';
-  my $diff = Math::BigFloat->new('1e-'.$d);
   
   # taylor:      x^3   x^5   x^7   x^9
   #    sin = x - --- + --- - --- + --- ...
@@ -412,10 +412,11 @@ sub sin
   # difference for each term is thus x^2 and 1,2
  
   my $sin = $x->copy(); my $last = 0;
-  my $x2 = $x*$x; 
-  my $over = $x2 * $x; my $below = 6; my $factorial = Math::BigInt->new(4);
-  my $sign = 1;
-  while ($sin ne $last) # no $x-$last > $diff because bdiv() limit on accuracy
+  my $sign = 1;				# start with -=
+  my $x2 = $x * $x; 			# X ^ 2, difference between terms
+  my $over = $x2 * $x; 			# X ^ 3
+  my $below = Math::BigFloat->new(6); my $factorial = Math::BigFloat->new(4);
+  while ($sin->bcmp($last) != 0) # no $x-$last > $diff because bdiv() limit on accuracy
     {
     $last = $sin->copy();
     if ($sign == 0)
@@ -431,7 +432,7 @@ sub sin
     $below *= $factorial; $factorial++;			# n*(n+1)
     $below *= $factorial; $factorial++;
     }
-  return $sin->round($d-1);
+  $sin->bround($d-1);
   }
 
 sub cos
@@ -441,11 +442,10 @@ sub cos
   # Second argument is accuracy (number of significant digits), it
   # stops when at least so much plus one digits are 'stable' and then
   # rounds it. Default is 42.
-  my $x = shift || 0;
+  my $x = shift; $x = 0 if !defined $x;
   my $d = abs(shift || 42); $d = abs($d)+1;
 
   $x = Math::BigFloat->new($x) if ref($x) ne 'Math::BigFloat';
-  my $diff = Math::BigFloat->new('1e-'.$d);
   
   # taylor:      x^2   x^4   x^6   x^8
   #    cos = 1 - --- + --- - --- + --- ...
@@ -453,10 +453,12 @@ sub cos
   
   # difference for each term is thus x^2 and 1,2
  
-  my $cos = Math::BigFloat->new(1); my $last = 0;
-  my $over = $x*$x; my $below = 2; my $factorial = Math::BigInt->new(3);
-  my $x2 = $x*$x; my $sign = 1;
-  while ($cos ne $last) # no $x-$last > $diff because bdiv() limit on accuracy
+  my $cos = Math::BigFloat->bone(); my $last = 0;
+  my $over = $x * $x;			# X ^ 2
+  my $x2 = $over->copy();		# X ^ 2; difference between terms
+  my $sign = 1;				# start with -=
+  my $below = Math::BigFloat->new(2); my $factorial = Math::BigFloat->new(3);
+  while ($cos->bcmp($last) != 0) # no $x-$last > $diff because bdiv() limit on accuracy
     {
     $last = $cos->copy();
     if ($sign == 0)
@@ -472,7 +474,7 @@ sub cos
     $below *= $factorial; $factorial++;			# n*(n+1)
     $below *= $factorial; $factorial++;
     }
-  return $cos->round($d-1);
+  $cos->round($d-1);
   }
 
 sub tan
@@ -482,11 +484,10 @@ sub tan
   # Second argument is accuracy (number of significant digits), it
   # stops when at least so much plus one digits are 'stable' and then
   # rounds it. Default is 42.
-  my $x = shift || 0;
+  my $x = shift; $x = 0 if !defined $x;
   my $d = abs(shift || 42); $d = abs($d)+1;
 
   $x = Math::BigFloat->new($x) if ref($x) ne 'Math::BigFloat';
-  my $diff = Math::BigFloat->new('1e-'.$d);
   
   # taylor:  1         2            3            4           5  
 
@@ -507,16 +508,15 @@ sub tan
   my $x2 = $x*$x;
   my $over = $x2*$x;
   my $below = Math::BigFloat->new(24);	 	# (1*2*3*4) (2n)!
-  my $factorial = Math::BigInt->new(5);	 	# for next (2n)!
-  my $two_n = Math::BigInt->new(16);	 	# 2^2n
-  my $two_factor = Math::BigInt->new(4); # 2^2(n+1) = $two_n * $two_factor
-  my $mul = Math::BigInt->new(1);
+  my $factorial = Math::BigFloat->new(5);	# for next (2n)!
+  my $two_n = Math::BigFloat->new(16);	 	# 2^2n
+  my $two_factor = Math::BigFloat->new(4); 	# 2^2(n+1) = $two_n * $two_factor
   my ($b,$b1,$b2); $b = 4;
-  while ($tan ne $last) # no $x-$last > $diff because bdiv() limit on accuracy
+  while ($tan->bcmp($last) != 0) # no $x-$last > $diff because bdiv() limit on accuracy
     {
     $last = $tan->copy();
     ($b1,$b2) = bernoulli($b);
-    $tan += $over->copy()->bmul($two_n)->bmul($two_n-1)->bmul($b1->babs())->bdiv($below,$d)->bdiv($b2,$d);
+    $tan += $over->copy()->bmul($two_n)->bmul($two_n - $fone)->bmul($b1->babs())->bdiv($below,$d)->bdiv($b2,$d);
     $over *= $x2;				# x^3, x^5 etc
     $below *= $factorial; $factorial++;		# n*(n+1)
     $below *= $factorial; $factorial++;
@@ -524,7 +524,7 @@ sub tan
     $b += 2;					# next bernoulli index
     last if $b > 40;				# safeguard
     }
-  return $tan->round($d-1);
+  $tan->round($d-1);
   }
 
 sub sinh
@@ -534,11 +534,10 @@ sub sinh
   # Second argument is accuracy (number of significant digits), it
   # stops when at least so much plus one digits are 'stable' and then
   # rounds it. Default is 42.
-  my $x = shift || 0;
+  my $x = shift; $x = 0 if !defined $x;
   my $d = abs(shift || 42); $d = abs($d)+1;
 
   $x = Math::BigFloat->new($x) if ref($x) ne 'Math::BigFloat';
-  my $diff = Math::BigFloat->new('1e-'.$d);
   
   # taylor:       x^3   x^5   x^7
   #    sinh = x + --- + --- + --- ...
@@ -548,8 +547,8 @@ sub sinh
  
   my $sinh = $x->copy(); my $last = 0;
   my $x2 = $x*$x; 
-  my $over = $x2 * $x; my $below = 6; my $factorial = Math::BigInt->new(4);
-  while ($sinh ne $last) # no $x-$last > $diff because bdiv() limit on accuracy
+  my $over = $x2 * $x; my $below = Math::BigFloat->new(6); my $factorial = Math::BigFloat->new(4);
+  while ($sinh->bcmp($last)) # no $x-$last > $diff because bdiv() limit on accuracy
     {
     $last = $sinh->copy();
     $sinh += $over->copy()->bdiv($below,$d);
@@ -557,7 +556,7 @@ sub sinh
     $below *= $factorial; $factorial++;			# n*(n+1)
     $below *= $factorial; $factorial++;
     }
-  return $sinh->round($d-1);
+  $sinh->bround($d-1);
   }
 
 sub cosh
@@ -567,11 +566,10 @@ sub cosh
   # Second argument is accuracy (number of significant digits), it
   # stops when at least so much plus one digits are 'stable' and then
   # rounds it. Default is 42.
-  my $x = shift || 0;
+  my $x = shift; $x = 0 if !defined $x;
   my $d = abs(shift || 42); $d = abs($d)+1;
 
   $x = Math::BigFloat->new($x) if ref($x) ne 'Math::BigFloat';
-  my $diff = Math::BigFloat->new('1e-'.$d);
   
   # taylor:       x^2   x^4   x^6
   #    cosh = x + --- + --- + --- ...
@@ -579,10 +577,10 @@ sub cosh
   
   # difference for each term is thus x^2 and 1,2
  
-  my $cosh = Math::BigFloat->new(1); my $last = 0;
+  my $cosh = Math::BigFloat->bone(); my $last = 0;
   my $x2 = $x*$x; 
-  my $over = $x2; my $below = 2; my $factorial = Math::BigInt->new(3);
-  while ($cosh ne $last) # no $x-$last > $diff because bdiv() limit on accuracy
+  my $over = $x2; my $below = Math::BigFloat->new(); my $factorial = Math::BigFloat->new(3);
+  while ($cosh->bcmp($last)) # no $x-$last > $diff because bdiv() limit on accuracy
     {
     $last = $cosh->copy();
     $cosh += $over->copy()->bdiv($below,$d);
@@ -590,7 +588,7 @@ sub cosh
     $below *= $factorial; $factorial++;			# n*(n+1)
     $below *= $factorial; $factorial++;
     }
-  return $cosh->round($d-1);
+  $cosh->bround($d-1);
   }
 
 sub arctan
@@ -600,11 +598,10 @@ sub arctan
   # Second argument is accuracy (number of significant digits), it
   # stops when at least so much plus one digits are 'stable' and then
   # rounds it. Default is 42.
-  my $x = shift || 0;
+  my $x = shift; $x = 0 if !defined $x;
   my $d = abs(shift || 42); $d = abs($d)+1;
 
   $x = Math::BigFloat->new($x) if ref($x) ne 'Math::BigFloat';
-  my $diff = Math::BigFloat->new('1e-'.$d);
   
   # taylor:      x^3   x^5   x^7   x^9
   # arctan = x - --- + --- - --- + --- ...
@@ -615,9 +612,9 @@ sub arctan
  
   my $arctan = $x->copy(); my $last = 0;
   my $x2 = $x*$x; 
-  my $over = $x2*$x; my $below = 3; my $add = Math::BigInt->new(2);
+  my $over = $x2*$x; my $below = Math::BigFloat->new(3); my $add = Math::BigFloat->new(2);
   my $sign = 1;
-  while ($arctan ne $last) # no $x-$last > $diff because bdiv() limit on A
+  while ($arctan->bcmp($last)) # no $x-$last > $diff because bdiv() limit on A
     {
     $last = $arctan->copy();
     if ($sign == 0)
@@ -632,7 +629,7 @@ sub arctan
     $over *= $x2;					# $x*$x
     $below += $add;
     }
-  return $arctan->round($d-1);
+  $arctan->bround($d-1);
   }
 
 sub arctanh
@@ -642,11 +639,10 @@ sub arctanh
   # Second argument is accuracy (number of significant digits), it
   # stops when at least so much plus one digits are 'stable' and then
   # rounds it. Default is 42.
-  my $x = shift || 0;
+  my $x = shift; $x = 0 if !defined $x;
   my $d = abs(shift || 42); $d = abs($d)+1;
 
   $x = Math::BigFloat->new($x) if ref($x) ne 'Math::BigFloat';
-  my $diff = Math::BigFloat->new('1e-'.$d);
   
   # taylor:       x^3   x^5   x^7   x^9
   # arctanh = x + --- + --- + --- + --- + ...
@@ -657,15 +653,15 @@ sub arctanh
  
   my $arctanh = $x->copy(); my $last = 0;
   my $x2 = $x*$x; 
-  my $over = $x2*$x; my $below = 3; my $add = Math::BigInt->new(2);
-  while ($arctanh ne $last) # no $x-$last > $diff because bdiv() limit on A
+  my $over = $x2*$x; my $below = Math::BigFloat->new(3); my $add = Math::BigFloat->new(2);
+  while ($arctanh->bcmp($last)) # no $x-$last > $diff because bdiv() limit on A
     {
     $last = $arctanh->copy();
     $arctanh += $over->copy()->bdiv($below,$d);
     $over *= $x2;					# $x*$x
     $below += $add;
     }
-  return $arctanh->round($d-1);
+  $arctanh->bround($d-1);
   }
 
 sub arcsin
@@ -675,11 +671,10 @@ sub arcsin
   # Second argument is accuracy (number of significant digits), it
   # stops when at least so much plus one digits are 'stable' and then
   # rounds it. Default is 42.
-  my $x = shift || 0;
+  my $x = shift; $x = 0 if !defined $x;
   my $d = abs(shift || 42); $d = abs($d)+1;
 
   $x = Math::BigFloat->new($x) if ref($x) ne 'Math::BigFloat';
-  my $diff = Math::BigFloat->new('1e-'.$d);
   
   # taylor:      1 * x^3   1 * 3 * x^5   1 * 3 * 5 * x^7  
   # arcsin = x + ------- + ----------- + --------------- + ...
@@ -690,12 +685,11 @@ sub arcsin
 
   my $arcsin = $x->copy(); my $last = 0;
   my $x2 = $x*$x; 
-  my $over = $x2*$x; my $below = 6; 
-  my $one = Math::BigInt->new(1);
-  my $two = Math::BigInt->new(2);
-  my $fac1 = Math::BigInt->new(1);
-  my $fac2 = Math::BigInt->new(2);
-  while ($arcsin ne $last) # no $x-$last > $diff because bdiv() limit on A
+  my $over = $x2*$x; my $below = Math::BigFloat->new(6); 
+  my $fac1 = Math::BigFloat->new(1);
+  my $fac2 = Math::BigFloat->new(2);
+  my $two = Math::BigFloat->new(2);
+  while ($arcsin->bcmp($last)) # no $x-$last > $diff because bdiv() limit on A
     {
     $last = $arcsin->copy();
     $arcsin += $over->copy()->bmul($fac1)->bdiv($below->copy->bmul($fac2),$d);
@@ -704,7 +698,7 @@ sub arcsin
     $fac1 += $two;
     $fac2 += $two;
     }
-  return $arcsin->round($d-1);
+  $arcsin->bround($d-1);
   }
 
 sub arcsinh
@@ -714,7 +708,7 @@ sub arcsinh
   # Second argument is accuracy (number of significant digits), it
   # stops when at least so much plus one digits are 'stable' and then
   # rounds it. Default is 42.
-  my $x = shift || 0;
+  my $x = shift; $x = 0 if !defined $x;
   my $d = abs(shift || 42); $d = abs($d)+1;
 
   $x = Math::BigFloat->new($x) if ref($x) ne 'Math::BigFloat';
@@ -729,8 +723,6 @@ sub arcsinh
   my $arcsinh = $x->copy(); my $last = 0;
   my $x2 = $x*$x; my $sign = 0; 
   my $over = $x2*$x; my $below = 6; 
-  my $one = Math::BigInt->new(1);
-  my $two = Math::BigInt->new(2);
   my $fac1 = Math::BigInt->new(1);
   my $fac2 = Math::BigInt->new(2);
   while ($arcsinh ne $last) # no $x-$last > $diff because bdiv() limit on A
@@ -751,64 +743,40 @@ sub arcsinh
     $fac1 += $two;
     $fac2 += $two;
     }
-  return $arcsinh->round($d-1);
+  $arcsinh->round($d-1);
   }
 
 sub log
   {
-  my $x = shift;
-  my $base = shift || 10;
-  my $d = abs(shift || 42); $d = abs($d)+1;
+  my ($x,$base,$d) = @_;
 
-  $x = Math::BigFloat->new($x) if ref($x) ne 'Math::BigFloat';
-
-  return Math::BigFloat->bone() if $x == $base;
-  return Math::BigFloat->bzero() if $x == 1;
- 
-  # u = x-1
-  # taylor:       u^2   u^3   u^4  
-  # lg (x)  = u - --- + --- - --- + ...
-  # 		   2     3     4
-  
-  # promote Bigints
-  my $u = $x->copy(); $u -= 1; 
-  my $log = $u->copy(); 
-  my $over = $u*$u;
-  my $below = Math::BigFloat->new(2);
-  my $sign = 0; my $last = 0;
-  while ($log ne $last)
+  my $y;
+  if (!ref($x) || !$x->isa('Math::BigFloat'))
     {
-    # print "$log $over $below $sign\n";
-    $last = $log->copy();
-    if ($sign == 0)
-      {
-      $log -= $over->copy()->bdiv($below,$d);
-      }
-    else
-      {
-      $log += $over->copy()->bdiv($below.$d);
-      } 
-    $over *= $u; $below++;
-    $sign = 1 - $sign;	# alternate
+    $y = Math::BigFloat->new($x);
     }
-  return $log->round($d-1);
+  else
+    {
+    $y = $x->copy();
+    }
+  $y->blog($base,$d);
+  $y;
   }
-
-my $four = Math::BigFloat->new(4);
-my $sixteen = Math::BigFloat->new(16);
 
 sub pi
   {
   # calculate PI (as suggested by Robert Creager)
   my $digits = abs(shift || 1024);
 
-  my $one = Math::BigFloat->new(1);
+  my $d = $digits+5;
 
-   my $d = $digits+5;
-   my $pi =  $sixteen * arctan( scalar $one->copy()->bdiv('5',$d), $d )
-              - $four * arctan( scalar $one->copy()->bdiv('239',$d),$d );
-  $pi->bround($digits+1);
+  my $pi =  $sixteen * arctan( scalar $fone->copy()->bdiv($five,$d), $d )
+             - $four * arctan( scalar $fone->copy()->bdiv($twothreenine,$d), $d);
+  $pi->bround($digits+1);	# +1 for the "3."
   }
+
+1;
+__END__
 
 #############################################################################
 
@@ -828,25 +796,25 @@ Math::Big - routines (cos,sin,primes,hailstone,euler,fibbonaci etc) with big num
     $hailstone	= hailstone (1000);	# length of sequence
     @hailstone	= hailstone (127);	# the entire sequence
     
-    $fak        = fak(1000);		# faktorial 1000!
+    $factorial	= factorial(1000);	# factorial 1000!
  
     $e = euler(1,64); 			# e to 64 digits
 
     $b3 = bernoulli(3);
 
-    $cos     = cos(0.5,128);	# cosinus to 128 digits
-    $sin     = sin(0.5,128);	# sinus to 128 digits
-    $cosh    = cosh(0.5,128);	# cosinus hyperbolicus to 128 digits
-    $sinh    = sinh(0.5,128);	# sinus hyperbolicus to 128 digits
-    $tan     = tan(0.5,128);	# tangens to 128 digits
-    $arctan  = arctan(0.5,64);	# arcus tangens to 64 digits
-    $arcsin  = arcsin(0.5,32);	# arcus sinus to 32 digits
-    $arcsinh = arcsin(0.5,18);	# arcus sinus hyperbolicus to 18 digits
+    $cos	= cos(0.5,128);		# cosinus to 128 digits
+    $sin	= sin(0.5,128);		# sinus to 128 digits
+    $cosh	= cosh(0.5,128);	# cosinus hyperbolicus to 128 digits
+    $sinh	= sinh(0.5,128);	# sinus hyperbolicus to 128 digits
+    $tan	= tan(0.5,128);		# tangens to 128 digits
+    $arctan	= arctan(0.5,64);	# arcus tangens to 64 digits
+    $arcsin	= arcsin(0.5,32);	# arcus sinus to 32 digits
+    $arcsinh	= arcsin(0.5,18);	# arcus sinus hyperbolicus to 18 digits
 
-    $pi      = pi(1024);	# first 1024 digits
-    $log     = log(64,2);	# $log==6, because 2**6==64
-    $log     = log(100,10);	# $log==2, because 10**2==100
-    $log     = log(100);	# base defaults to 10: $log==2
+    $pi		= pi(1024);		# first 1024 digits
+    $log	= log(64,2);		# $log==6, because 2**6==64
+    $log	= log(100,10);		# $log==2, because 10**2==100
+    $log	= log(100);		# base defaults to 10: $log==2
 
 =head1 REQUIRES
 
@@ -1004,9 +972,13 @@ The number PI to 1024 digits after the dot.
 
 =head2 B<log()>
 
-	$log = log($number,$base);
+	$log = log($number,$base,$A);
 
-Calculates the logarithmn of $number to base $base.
+Calculates the logarithmn of C<$number> to base C<$base>, with C<$A> digits accuracy
+and returns a new number as the result (leaving C<$number> alone).
+
+BigInts are promoted to BigFloats, meaning you will always not get a truncated
+integer result like when using C<Math::BigInt::blog>.
 
 =head1 BUGS
 
@@ -1030,6 +1002,8 @@ arbitrarily big numbers in O(N) time:
 The Bernoulli numbers are not yet calculated, but looked up in a table, which
 has only 20 elements. So C<bernoulli($x)> with $x > 42 will fail.
 
+If you know of an algorithmn to calculate them, please drop me a note.
+
 =back
 
 =head1 LICENSE
@@ -1045,7 +1019,7 @@ to hear about how my code helps you ;)
 Quite a lot of ideas from other people, especially D. E. Knuth, have been used,
 thank you!
 
-Tels http://bloodgate.com 2001-2003.
+Tels http://bloodgate.com 2001-2004.
 
 =cut
 

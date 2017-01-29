@@ -3,9 +3,10 @@
 use Test;
 BEGIN { plan tests => 16; }
 
-BEGIN { unshift @INC, '../lib'; }	# comment out to use old module
 use strict;
 use Math::BigInt qw/:constant/;
+
+print "Math::BigInt v$Math::BigInt::VERSION\n";
 
 # calculate some sample prime numbers from 
 # http://www.utm.edu/research/primes/largest.html
@@ -20,10 +21,18 @@ my $two = Math::BigInt->new(2);
 # Also there is len(), since the old BigInt has not got length() and we want
 # this script to be comparable between old and new version.
 
+print "\n# Sophie Germain prime with 7119 digits:\n";
+$x = Math::BigInt->new(72021) * Math::BigInt->new(2)->bpow(23630); $x--;
+ok (len($x),7119);
+
+print "# Sophie Germain prime with 34547 digits:\n";
+$x = Math::BigInt->new(2540041185) * Math::BigInt->new(2)->bpow(114729); $x--;
+ok (len($x),34547);
 
 ##############################################################################
 # Todo: these do not complete in reasonable time:
 
+#print "# 2 ** X - 1 primes:\n";
 # $x = $two ** 6972593; $x--;      ok (len($x),2098960);
 # $x = $two ** 3021377; $x--;      ok (len($x),909526);
 # $x = $two ** 756839; $x--;       ok (len($x),227832);
@@ -32,6 +41,7 @@ my $two = Math::BigInt->new(2);
 ##############################################################################
 # but these do:
 
+print "# twin primes:\n";
 # some twin primes (first in list at 03/2001)
 $x = ($two ** 80025) * 665551035; $x++; $y = $x-2; ok (len($x),24099);
 $x = ($two ** 66443) * 1693965; $x++; $y = $x-2;   ok (len($x),20008);
@@ -40,14 +50,9 @@ $x = ($two ** 64955) * 83475759; $x++; $y = $x-2;  ok (len($x),19562);
 $x = ($two ** 38880) * 242206083; $x++; $y = $x-2; ok (len($x),11713);
 
 ##############################################################################
-# Sophie Germain primes
-# todo: does not finish after 30 m on 800 Mhz
-
-# $x = Math::BigInt->new(72021)**223630; $x--; ok (len($x),7119);
-
-##############################################################################
 # some quadruplet primes...
 
+print "# quadruple primes:\n";
 # 3510160221387831655*(2^3363-2^1121)-6*2^1121-7
 $x = '3510160221387831655' * (2 ** 3363 - 2**1121) - 6*(2**1121);
 my @q = ( $x-7,$x-5,$x-1,$x+1);
@@ -57,8 +62,9 @@ ok (len($q[2]),'1031');
 ok (len($q[3]),'1031');
 
 ##############################################################################
-# some real wierd primes:
+# some real weird primes:
 
+print "# weird primes:\n";
 # (2^3833-1)/(14193959303*340789152474053904109001)
 $x = Math::BigInt->new('340789152474053904109001');
 $x *= '14193959303';
@@ -87,10 +93,9 @@ $x = Math::BigInt->new(7147) ** 2161; $x--; $x /= 7146;
 ok (len($x),'8325');
 
 # 16*R(5700)*(150093*10^8000+1)+1 # most ending 7's
-# gives error in BigInt
-#$x = 16 * R(5700);
-#$x *= (150093*(Math::BigInt->new(10)**8000))+1; $x++;
-#ok (len($x),'13706');
+$x = 16 * R(5700);
+$x *= (150093*(Math::BigInt->new(10)**8000))+1; $x++;
+ok (len($x),'13706');
 
 # 2*11^13359+1
 $x = 2*(Math::BigInt->new(11)**13359)+1;
