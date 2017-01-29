@@ -2,6 +2,7 @@ I wish to thank the following people:
 
 * Tom Phoenix for the idea of Math::Big::Factors.
 * Donald E. Knuth
+* Tilghman Lesher for the to_base() idea
 
 List is not complete ;o)
 

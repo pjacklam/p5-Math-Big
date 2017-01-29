@@ -1,20 +1,25 @@
-Math::Big - usefull routines and packages with Math::BigInt/BigFloat
 
-(C) ..--- ----- ----- .---- by - . .-.. ... .-.-.-  All rights reserved.
+Math::Big - (C) 2001 - 2005 by - . .-.. ... .-.-.-
 
-This needs the new versions of Math::BigInt and Math::BigFloat, as they are
-on CPAN as 'Math::BigInt' or Perl newer v5.7.1.
+Usefull routines with big numbers. Contains trigonometric functions like
+sin(), arcsin(), arctan() etc, plus euler(), pi(), base(), to_base() and
+numerous others.
 
-To test, untar, unzip and then run
+This module needs the new versions of Math::BigInt and Math::BigFloat, as
+they are on CPAN in the package 'Math::BigInt' or in Perl v5.7.1 or newer.
 
-	perl Makefile.PL
-	make
-	make test
+See INSTALL for help on installing this package.
 
-See also ./examples for some example scripts.
+For a quick reference on what has changed from the old versions, please see
+NEW. CHANGES contains the complete version history.
 
-More information including HTMLified help and preliminary benchmark results
-are available under:
+EXAMPLES
+========
+
+In ./examples are some basic example scripts.
+
+More information including HTMLified help and benchmark results are
+available under:
 
 	http://bloodgate.com/perl/
 

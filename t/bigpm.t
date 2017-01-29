@@ -1,17 +1,16 @@
 #!/usr/bin/perl -w
 
 use strict;
-use Test;
+use Test::More;
 
 BEGIN 
   {
   $| = 1;
   chdir 't' if -d 't';
   unshift @INC, '../lib'; # for running manually
-  plan tests => 133;
+  plan tests => 149;
   }
 
-use Math::BigInt;
 use Math::Big;
 
 my (@args,$ref,$func,$argnum,$try,$x,$y,$z,$ans,@ans,$ans1);
@@ -43,7 +42,7 @@ while (my $line = <DATA>)
     $try .= " = Math::Big::$func (";
     for (my $i = 0; $i < $argnum; $i++)
       {
-      $try .= "'$args[$i]',";
+      $try .= "\"$args[$i]\",";
       }
     $try .= ");";
     #print "$try\n";
@@ -68,14 +67,31 @@ while (my $line = <DATA>)
         $ans .= " $c";
         } 
       }
-    print "# Tried: '$try'\n" if !ok ($ans,$ans1);
+    is ($ans,$ans1, "tried '$try'");
     }
   } # endwhile data tests
 close DATA;
 
+# primes in scalar context
+
+is (Math::Big::primes(3), '2', 'primes in scalar context');
+is (Math::Big::primes(4), '2', 'primes in scalar context');
+is (Math::Big::primes(5), '3', 'primes in scalar context');
+
 # all done
 
 __END__
+&to_base:2
+0:2:0
+8:2:1000
+15:2:1111
+15:10:15
+15:16:F
+31:2:11111
+31:10:31
+31:16:1F
+31:8:37
+128:8:200
 &fibonacci:1
 0:0
 1:1
@@ -107,6 +123,9 @@ __END__
 5:5:16:8:4:2:1
 6:9
 6:6:3:10:5:16:8:4:2:1
+21:21:64:32:16:8:4:2:1
+127:127:382:191:574:287:862:431:1294:647:1942:971:2914:1457:4372:2186:1093:3280:1640:820:410:205:616:308:154:77:232:116:58:29:88:44:22:11:34:17:52:26:13:40:20:10:5:16:8:4:2:1
+127:47
 &base:2
 3:2:1:1
 5:2:2:1
