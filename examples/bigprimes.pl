@@ -8,7 +8,7 @@ use Math::BigInt qw/:constant/;
 
 print "Math::BigInt v$Math::BigInt::VERSION\n";
 
-# calculate some sample prime numbers from 
+# calculate some sample prime numbers from
 # http://www.utm.edu/research/primes/largest.html
 # also: http://www-stud.enst.fr/~bellard/mersenne.html
 # (c takes 1 minute on 800 Mhz, so Perl will take..ages..)
@@ -72,7 +72,7 @@ $x = (2**3833-1) / $x;
 ok (len($x),'1121');
 
 
-#(2^4751-1)/(268982617*3274778783*629530076753*81630665742097*1507074535068001) 
+#(2^4751-1)/(268982617*3274778783*629530076753*81630665742097*1507074535068001)
 $x = Math::BigInt->new('268982617');
 $x = $x * '3274778783' * '629530076753' * '81630665742097' * '1507074535068001';
 $x = ((2**4751)-1) / $x;
@@ -133,4 +133,3 @@ sub len
   $x = "$x"; $x =~ s/^\+//;
   return length($x);
   }
-

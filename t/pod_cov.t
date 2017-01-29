@@ -24,4 +24,3 @@ SKIP:
   pod_coverage_ok( 'Math::Big', "All our Math::Big are covered" );
   pod_coverage_ok( 'Math::Big::Factors', "All our Math::Big::Factors are covered" );
   }
-

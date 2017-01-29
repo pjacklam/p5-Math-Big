@@ -30,10 +30,10 @@ print "The first Fibonacci number with $n digits is ";
 
 print "\n" if $trace;
 my $cur = $n * 5;
-$fib = Math::Big::fibonacci($cur); 
+$fib = Math::Big::fibonacci($cur);
 while ($fib->length() - $n > 10)
   {
-  $fib = Math::Big::fibonacci($cur); 
+  $fib = Math::Big::fibonacci($cur);
   print "try $cur ",$fib->length(),"\n" if $trace;
   $cur += ($n - $fib->length()) * 5;
   }
@@ -53,8 +53,7 @@ while ($fib->length() >= $n)
   print "try $cur ",$fib->length(),"\n" if $trace;
   $cur --;
   }
-$cur += 2; 
+$cur += 2;
 #$fib = Math::Big::fibonacci($cur); 	# this is the final first
 
 print "the $cur"."th in the series.\n\n";
-

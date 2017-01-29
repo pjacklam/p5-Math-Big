@@ -1,3 +1,5 @@
+The following list is not up to date:
+
 Math::Big:
  * bernoulli() for $n > 20
  * tan() (depends on bernoulli)
