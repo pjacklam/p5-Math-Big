@@ -1,0 +1,41 @@
+
+Complete version history
+========================
+
+############################################################################## 
+Math::Roman:
+
+2001-02-17 1.02: require 5_005;
+2001-04-14 1.03: fixed as_number() to return BigInt 
+2001-05-07 1.04: got rid of C&P in overload section
+
+############################################################################## 
+Math::Big:
+
+2001-03-17 1.00: first version with primes(), fibonacci(), base()
+2001-03-24 1.01: added: hailstone()
+2001-04-12 1.02: added: factors(), wheel()
+		 fixed: primes()
+2001-05-07 1.03: added: factorial()
+2001-06-11 1.04: added: euler, bernoulli, cos, tan, sin, cosh, sinh, 
+			arctan, arctanh, arcsin, arcsinh,
+		 moved: wheel, factor_wheel => Math::Big::Factorial
+
+############################################################################## 
+Math::Big::Factorial:
+
+2001-06-15 1.00: first version from Math::Big
+
+############################################################################## 
+Math::BigInt::Constant:
+
+2000-03-24 1.00: first version
+2000-03-27 1.01: fixed up documentation
+2000-06-15 1.02: fixed documentation to match current version
+		 added tests for band(), bior(), bxor(), bceil(), bfloor(),
+		 bnan() and binf()
+
+Please send me test-reports, your experiences with this and your ideas - I love
+to hear about my work!
+
+Tels <http://bloodgate.com/>
