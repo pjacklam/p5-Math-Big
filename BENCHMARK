@@ -28,3 +28,71 @@ Note: The values for SSLeay::BN were interpolated (aka guessed) by taking
 benchmarks from "Algorithmns in Perl", (page 486 in German version), and than
 scaling the numbers to match the speed of v0.01 on this machine.
 
+fibonacci() uses from 1.06 onwards a very fast conquer-divide algorithmn to
+find the result, instead of doing the linear summing. Benchmark done on an
+Athlon 1 Ghz with the following script:
+
+###############################################################################
+#!/usr/bin/perl -w
+
+use lib 'lib';
+#use lib '../old/Math-Big-1.05/lib';
+use Math::BigInt lib => 'Pari';
+use Math::Big qw/fibonacci/;
+use Benchmark;
+
+# timethese (1000000, { 'fib' => sub { $f = term(60); } } );
+
+my $iter = shift || 500;
+
+print "Math::Big v$Math::Big::VERSION\n";
+print "Math::BigInt v$Math::BigInt::VERSION ";
+print "lib => ",Math::BigInt::_core_lib(),"\n";
+
+timethese ($iter, {
+  fast_100 => sub { $z = fibonacci(100); }, 
+  fast_1000 => sub { $z = fibonacci(1000); },
+  fast_2000 => sub { $z = fibonacci(2000); },
+  } );
+timethese ($iter/5, {
+  fast_5000 => sub { $z = fibonacci(5000); },
+  fast_10000 => sub { $z = fibonacci(10000); }, 
+  } );
+###############################################################################
+
+Note that using Pari did not make the original algorithmn much faster, but
+does so with the new one - the numbers speak for themselves:
+
+Math::Big v1.05
+Math::BigInt v1.45 lib => Math::BigInt::Calc
+  fast_100:  1 secs ( 0.97 usr +  0.00 sys =  0.97 CPU) @ 25.77/s (n=25)
+ fast_1000: 10 secs (10.30 usr +  0.01 sys = 10.31 CPU) @  2.42/s (n=25)
+ fast_2000: 22 secs (22.19 usr +  0.01 sys = 22.20 CPU) @  1.13/s (n=25)
+ fast_5000: 13 secs (13.41 usr +  0.02 sys = 13.43 CPU) @  0.37/s (n=5)
+fast_10000: 34 secs (33.51 usr +  0.01 sys = 33.52 CPU) @  0.15/s (n=5)
+
+Math::Big v1.05
+Math::BigInt v1.45 lib => Math::BigInt::Pari
+  fast_100:  1 secs ( 0.99 usr +  0.01 sys =  1.00 CPU) @ 25.00/s (n=25)
+ fast_1000: 10 secs ( 9.95 usr +  0.02 sys =  9.97 CPU) @  2.51/s (n=25)
+ fast_2000: 20 secs (19.87 usr +  0.08 sys = 19.95 CPU) @  1.25/s (n=25)
+ fast_5000: 10 secs ( 9.95 usr +  0.04 sys =  9.99 CPU) @  0.50/s (n=5)
+fast_10000: 21 secs (19.95 usr +  0.14 sys = 20.09 CPU) @  0.25/s (n=5)
+
+Math::Big v1.06
+Math::BigInt v1.45 lib => Math::BigInt::Calc
+  fast_100:  2 secs ( 1.65 usr +  0.00 sys =  1.65 CPU) @ 151.52/s (n=250)
+ fast_1000:  4 secs ( 3.99 usr +  0.00 sys =  3.99 CPU) @  62.66/s (n=250)
+ fast_2000:  7 secs ( 6.65 usr +  0.02 sys =  6.67 CPU) @  37.48/s (n=250)
+ fast_5000:  5 secs ( 4.74 usr +  0.01 sys =  4.75 CPU) @  10.53/s (n=50)
+fast_10000: 15 secs (15.33 usr +  0.01 sys = 15.34 CPU) @   3.26/s (n=50)
+
+Math::Big v1.06
+Math::BigInt v1.45 lib => Math::BigInt::Pari
+  fast_100:  1 secs ( 1.66 usr +  0.00 sys =  1.66 CPU) @ 150.60/s (n=250)
+ fast_1000:  3 secs ( 3.05 usr +  0.01 sys =  3.06 CPU) @  81.70/s (n=250)
+ fast_2000:  4 secs ( 3.40 usr +  0.01 sys =  3.41 CPU) @  73.31/s (n=250)
+ fast_5000:  1 secs ( 0.94 usr +  0.00 sys =  0.94 CPU) @  53.19/s (n=50)
+fast_10000:  1 secs ( 1.04 usr +  0.00 sys =  1.04 CPU) @  48.08/s (n=50)
+
+

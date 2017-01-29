@@ -8,7 +8,7 @@
 
 package Math::Big;
 use vars qw($VERSION);
-$VERSION = 1.05;    # Current version of this package
+$VERSION = 1.06;    # Current version of this package
 require  5.005;     # requires this Perl version or later
 
 use Math::BigInt;
@@ -16,11 +16,14 @@ use Math::BigFloat;
 use Exporter;
 @ISA = qw( Exporter );
 @EXPORT_OK = qw( primes fibonacci base hailstone factorial
-		 euler bernoulli
+		 euler bernoulli pi
 		 tan cos sin cosh sinh arctan arctanh arcsin arcsinh
+		 log
                );
 #@EXPORT = qw( );
 use strict;
+
+use vars qw/@F/;
 
 sub primes
   {
@@ -71,17 +74,16 @@ sub primes
   
 sub fibonacci
   {
-  my $n = shift;
+  my $n = shift || 0;
   $n = Math::BigInt->new($n) unless ref $n;
 
-  return if $n->is_nan();
-  return if $n->sign() eq '-';		# < 0
+  return if $n->sign() ne '+';		# < 0, NaN, inf
   #####################
   # list context
   if (wantarray)
     {
-    my @fib = (Math::BigInt->new(1),Math::BigInt->new(1));	# 0 = 1, 1 = 1
-    my $i = 2;							# no BigInt
+    my @fib = (Math::BigInt::bzero(),Math::BigInt::bone(),Math::BigInt::bone);
+    my $i = 3;							# no BigInt
     while ($i <= $n)
       {
       $fib[$i] = $fib[$i-1]+$fib[$i-2]; $i++;
@@ -90,16 +92,158 @@ sub fibonacci
     }
   #####################
   # scalar context
-  my $x = Math::BigInt->new(1);
-  return $x if $n < 2;
-  my $t = $x; my $y = $x;
-  my $i = Math::BigInt->new(2);
-  while ($i <= $n)
-    {
-    $t = $x + $y; $x = $y; $y = $t; $i++;
-    }
-  return $t;
+
+  return fibonacci_fast($n);
   }
+
+my $F;
+
+BEGIN
+  {
+  #     0,1,2,3,4,5,6,7, 8, 9, 10,11,12, 13, 14, 15, 16,  17, 18, 19
+  @F = (0,1,1,2,3,5,8,13,21,34,55,89,144,233,377,610,987,1597,2584,4181);
+  for (my $i = 0; $i < @F; $i++)
+    {
+    $F[$i] = Math::BigInt->new($F[$i]);
+    }
+  }
+
+sub fibonacci_fast
+  {
+  my $x = shift || 0;
+  return $F[$x] if $x < @F;
+ 
+  # Knuth, TAOCR Vol 1, Third Edition, p. 81
+  # F(n+m) = Fm * Fn+1 + Fm-1 * Fn
+
+  # if m is set to n+1, we get: 
+  # F(n+n+1) = F(n+1) * Fn+1 + Fn * Fn
+  # F(n*2+1) = F(n+1) ^ 2 + Fn ^ 2
+
+  # so to know Fx, we must know F((x-1)/2), which only works for odd x
+  # Fortunately:
+  # Fx+1 = F(x) + F(x-1)
+  # when x is even, then are x+1 and x-1 odd and can be calculated by the
+  # same means, and from this we get Fx. 
+
+  # starting with level 0 at Fn we fill a hash with the different n we need
+  # to calculate all Fn of the previous level. Here is an example for F1000:
+  
+  # To calculate F1000, we need F999 and F1001 (since 1000 is even)
+  # To calculate F999, we need F((999-1)/2) and F((999-1)/+2), this are 499
+  # and 500. For F1001 we need likewise 500 and 501:
+  # For 500, we need 499 and 501, both are already needed.
+  # For 501, we need 250 and 251. An so on and on until all values at a level
+  # are under 17.
+  # For the deepest level we use a table-lookup. The other levels are then
+  # calulated backwards, until we arive at the top and the result is then in
+  # level 0.
+
+  # level
+  #   0        1         2           3    and so on
+  # 1000 ->   999   ->  499 <-  ->  249
+  #    |	|---->  500  |
+  #    |-->  1001   ->  501 <-  ->  250    
+  #                       |------>  251
+
+  my @fibo;
+  $fibo[0]->{$x} = 1;			# our final result
+  # if $x is even we need these two, too
+  if ($x % 1 == 0)
+    {
+    $fibo[0]->{$x-1} = 1; $fibo[0]->{$x+1} = 1;
+    }
+  # XXX
+  # for statistics
+  my $steps = 0; my $sum = 0; my $add = 0; my $mul = 0;
+  my $level = 0;
+  my $high = 1;				# keep going?
+  my ($t,$t1,$f);			# helper variables
+  while ($high > 0)
+    {
+    $level++;				# next level
+    $high = 0;				# count of results > @F
+#      print "at level $level (high=$high)\n";
+    foreach $f (keys %{$fibo[$level-1]})
+      {
+      $steps ++;
+      if (($f & 1) == 0)		# odd/even?
+        {
+        # if it is even, add $f-1 and $f+1 to last level
+        # if not existing in last level, we must add
+        # ($f-1-1)/2 & ($f-1-1/2)+1 to the next level, too
+	$t = $f-1;
+        if (!exists $fibo[$level-1]->{$t})
+          {
+          $fibo[$level-1]->{$t} = 1; $t--; $t /= 2;	# $t is odd
+          $fibo[$level]->{$t} = 1; $fibo[$level]->{$t+1} = 1;
+          } 
+	$t = $f+1;
+        if (!exists $fibo[$level-1]->{$t})
+          {
+          $fibo[$level-1]->{$t} = 1; $t--; $t /= 2;	# $t is odd
+          $fibo[$level]->{$t} = 1; $fibo[$level]->{$t+1} = 1;
+          } 
+#        print "$f even: ",$f-1," ",$f+1," in level ",$level-1,"\n";
+        } 
+      else
+        {
+        # else add ($_-1)/2and ($_-1)/2 + 1 to this level
+        $t = $f-1; $t /= 2;
+        $fibo[$level]->{$t} = 1; $fibo[$level]->{$t+1} = 1;
+        $high = 1 if $t+1 >= @F;	# any value not in table?
+#       print "$_ odd: $t ",$t+1," in level $level (high = $high)\n";
+        }
+      }
+    }
+  # now we must fill our structure backwards with the results, combining them.
+  # numbers in the last level can be looked up:
+  foreach $f (keys %{$fibo[$level]})
+    {
+    $fibo[$level]->{$f} = $F[$f];
+    }
+ my $l = $level;		# for statistics
+  while ($level > 0)
+    {
+    $level--;
+    $sum += scalar keys %{$fibo[$level]};
+    # first do the odd ones
+    foreach $f (keys %{$fibo[$level]})
+      {
+      next if ($f & 1) == 0;
+      $t = $f-1; $t /= 2; my $t1 = $t+1;
+      $t = $fibo[$level+1]->{$t}; 
+      $t1 = $fibo[$level+1]->{$t1};
+      $fibo[$level]->{$f} = $t*$t+$t1*$t1;
+      $mul += 2; $add ++;
+      }
+    # now the even ones
+    foreach $f (keys %{$fibo[$level]})
+      {
+      next if ($f & 1) != 0;
+      $fibo[$level]->{$f} = $fibo[$level]->{$f+1} - $fibo[$level]->{$f-1};
+      $add ++;
+      }
+    }
+#  print "sum $sum level $l => ",$sum/$l," steps $steps adds $add muls $mul\n";
+  return $fibo[0]->{$x};
+  }
+
+#sub fibonacci_slow
+#  {
+#  my $n = shift;
+#  $n = Math::BigInt->new($n) if !ref($n);
+#  
+#  return $F[$n] if $n < @F;
+#  my $x = Math::BigInt::bone();
+#  my $t = $x; my $y = $t;
+#  my $i = Math::BigInt->new(3);
+#  while ($i <= $n)
+#    {
+#    $t = $x + $y; $x = $y; $y = $t; $i++;
+#    }
+#  return $t;
+#  }
 
 sub base
   {
@@ -575,7 +719,6 @@ sub arcsinh
   my $d = abs(shift || 42); $d = abs($d)+1;
 
   $x = Math::BigFloat->new($x) if ref($x) ne 'Math::BigFloat';
-  my $diff = Math::BigFloat->new('1e-'.$d);
   
   # taylor:      1 * x^3   1 * 3 * x^5   1 * 3 * 5 * x^7  
   # arcsin = x - ------- + ----------- - --------------- + ...
@@ -612,6 +755,120 @@ sub arcsinh
   return $arcsinh->round($d-1);
   }
 
+sub log
+  {
+  my $x = shift;
+  my $base = shift || 10;
+  my $d = abs(shift || 42); $d = abs($d)+1;
+
+  $x = Math::BigFloat->new($x) if ref($x) ne 'Math::BigFloat';
+
+  return Math::BigFloat->bone() if $x == $base;
+  return Math::BigFloat->bzero() if $x == 1;
+ 
+  # u = x-1
+  # taylor:       u^2   u^3   u^4  
+  # lg (x)  = u - --- + --- - --- + ...
+  # 		   2     3     4
+  
+  # promote Bigints
+  my $u = $x->copy(); $u -= 1; 
+  my $log = $u->copy(); 
+  my $over = $u*$u;
+  my $below = Math::BigFloat->new(2);
+  my $sign = 0; my $last = 0;
+  while ($log ne $last)
+    {
+    print "$log $over $below $sign\n";
+    $last = $log->copy();
+    if ($sign == 0)
+      {
+      $log -= $over->copy()->bdiv($below,$d);
+      }
+    else
+      {
+      $log += $over->copy()->bdiv($below.$d);
+      } 
+    $over *= $u; $below++;
+    $sign = 1 - $sign;	# alternate
+    }
+  return $log->round($d-1);
+  }
+
+sub pi
+  {
+  # use Ramanujan I for calculatng PI
+  # gives about 14 digits for every round
+  my $digits = abs(shift || 1024);
+
+  # some constants
+  my $k1 = Math::BigInt->new(545140134);
+  my $k2 = Math::BigInt->new(13591409);
+  my $k3 = Math::BigInt->new(640320);
+  my $sqrt_k3 = Math::BigFloat->new('800.199975');
+  my $k4 = Math::BigInt->new(100100025);
+  my $k5 = Math::BigInt->new(327843840);
+  my $k6 = Math::BigFloat->new(53360);
+  
+  # pi = k6 * sqrt(k3) / S;
+  $k6 *= $sqrt_k3;
+
+  #                                  ( (6n)! * (k2 + n*k1)
+  # S = sum over (n .. oo) -1 ** n * ------------------------------------ 
+  #                                  (n! ** 3) * (3n)! * ((8*k4*k5) ** n)
+
+  # starting with n == 0 means -1 ** 0 => 0, so start is n == 1
+
+  my $n = Math::BigInt->new(1);
+  my $sign = 0;					 # first term is -1 ** 1 => -
+  my $m = $digits / Math::BigInt->new(14); $m++; # nr of rounds
+  my $n6f = Math::BigInt->new(720);	# 6n! => 6! => 720
+  my $n6  = Math::BigInt->new(7);	# 6n => 6*1 => 6 (+1 for next loop)
+  my $k12 = $k2 + $k1;			# k2 + 1*k1 => $k2 + $k1
+  my $nf  = Math::BigInt->new(1);	# n! = 1! => 1
+  my $n3  = Math::BigInt->new(4);	# n*3 = 3 +1 for next loop
+  my $n3f  = Math::BigInt->new(6);	# (n*3)! = 3! => 6
+  my $k4k58 = $k4*$k5*8;		# to multiply each round
+  my $k4k58n = $k4k58->copy();		# ** 1 stays the same
+  my $nfp3;
+  my $S  = Math::BigFloat->new(0);
+  my $i; my $f;
+  print "k1 $k1\n";
+  print "k2 $k2\n";
+  print "k3 $k3\n";
+  print "k4 $k4\n";
+  print "k5 $k5\n";
+  print "k6 $k6\n";
+  print "doing $m rounds\n";
+  while ($n < $m)
+    {
+    $f = Math::BigFloat->new($n6 * $k12);
+    $f->bdiv( Math::BigFloat->new($nfp3*$n3f*$k4k58n), $digits+5);
+    # $S += ($n6 * $k12) / ($nfp3*$n3f*$k4k58n);
+    if ($sign == 0) { $S += $f; } else { $S -= $f; }
+    $sign = 1-$sign;					# flip sign
+    
+    $n++;
+    # update (6n)!
+    for ($i = 0; $i<6;$i++) { $n6f *= $n6++; }
+    # update k2 + n*k1
+    $k12 += $k1;
+    # update n! ** 3
+    $nf *= $n; $nfp3 = $nf*$nf*$nf;
+
+    # update $n3
+    for ($i = 0; $i<3;$i++) { $n3f *= $n3++; }
+    # update $k4k58n
+    $k4k58n *= $k4k58;
+    print "n=$n 6n!=$n6f k2+n*k1=$k12 n!3=$nfp3 3n!=$n3f\n (8*k4*k5)**n=$k4k58n\n S: $S\n";
+    sleep(1);
+    }
+  print "S: $S\n";
+  my $pi = $k6 / $S;
+  $pi->round($digits);
+  return $pi;
+  }
+
 #############################################################################
 
 =head1 NAME
@@ -621,7 +878,7 @@ Math::Big - routines (cos,sin,primes,hailstone,euler,fibbonaci etc) with big num
 =head1 SYNOPSIS
 
     use Math::Big qw/primes fibonacci hailstone factors wheel
-      cos sin tan euler bernoulli arctan arcsin/;
+      cos sin tan euler bernoulli arctan arcsin pi/;
 
     @primes	= primes(100);		# first 100 primes
     $prime	= primes(100);		# 100th prime
@@ -645,6 +902,11 @@ Math::Big - routines (cos,sin,primes,hailstone,euler,fibbonaci etc) with big num
     $arcsin  = arcsin(0.5,32);	# arcus sinus to 32 digits
     $arcsinh = arcsin(0.5,18);	# arcus sinus hyperbolicus to 18 digits
 
+    $pi      = pi(1024);	# first 1024 digits
+    $log     = log(64,2);	# 2 ** 6 == 64
+    $log     = log(100,10);	# 10 ** 100 == 2
+    $log     = log(100);	# base is 10 by default
+
 =head1 REQUIRES
 
 perl5.005, Exporter, Math::BigInt, Math::BigFloat
@@ -653,7 +915,7 @@ perl5.005, Exporter, Math::BigInt, Math::BigFloat
 
 Exports nothing on default, but can export C<primes()>, C<fibonacci()>,
 C<hailstone()>, C<bernoulli>, C<euler>, C<sin>, C<cos>, C<tan>, C<cosh>,
-C<sinh>, C<arctan>, C<arcsin>, C<arcsinh> and C<factorial>.
+C<sinh>, C<arctan>, C<arcsin>, C<arcsinh>, C<pi>, C<log> and C<factorial>.
 
 =head1 DESCRIPTION
 
@@ -680,7 +942,11 @@ half of the time and half of the space, but is still O(N).
 	$fib = fibonacci($n);
 
 Calculates the first N fibonacci numbers and returns them as array.
-In scalar context returns the Nth number of the serie.
+In scalar context returns the Nth number of the Fibonacci series.
+
+The scalar context version uses an ultra-fast conquer-divide style algorithm
+to calculate the result and is many times faster than the straightforward way
+of calculating the linear sum.
 
 =head2 B<hailstone()>
 
@@ -787,6 +1053,18 @@ Calculate I<cosinus hyperbolicus> of x, to $d digits.
 
 Calculate I<sinus hyperbolicus> of x, to $d digits.
 
+=head2 B<pi()>
+
+	$pi = pi(1024);
+
+The number PI to 1024 digits after the dot.
+
+=head2 B<log()>
+
+	$log = log($number,$base);
+
+Calculates the logarithmn of $number to base $base.
+
 =head1 BUGS
 
 =over 2
@@ -808,6 +1086,10 @@ arbitrarily big numbers in O(N) time:
 
 The Bernoulli numbers are not yet calculated, but looked up in a table, which
 has only 20 elements. So C<bernoulli($x)> with $x > 42 will fail.
+
+=item *
+
+pi() does not work yet, it is buggy.
 
 =back
 

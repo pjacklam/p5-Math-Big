@@ -1,5 +1,8 @@
-This lists only the changes for the current release (v1.05) over the last
+This lists only the changes for the current release (v1.06) over the last
 version, since HISTORY is now quite big:
 
 * fixed some nits in Math::BigInt::Constant and added tests
+* split up and Math:Roman
+* fibonacci() uses an ultra-fast conquer-divide algorithmn to calculate the
+  result and is many times faster than the old version
 
