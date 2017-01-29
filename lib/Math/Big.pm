@@ -2,8 +2,9 @@
 # Math/Big.pm -- usefull routines with Big numbers (BigInt/BigFloat)
 
 package Math::Big;
-use vars qw($VERSION);
-$VERSION = '1.10';	# Current version of this package
+use vars qw(@ISA $VERSION @EXPORT_OK);
+use strict;
+$VERSION = '1.11';	# Current version of this package
 require  5.005;		# requires this Perl version or later
 
 use Math::BigInt;
@@ -15,9 +16,8 @@ use Exporter;
 		 tan cos sin cosh sinh arctan arctanh arcsin arcsinh
 		 log
                );
-use strict;
 
-use vars qw/@F/;
+use vars qw/@F/;				# for fibonacci()
 
 # some often used constants:
 my $four = Math::BigFloat->new(4);
@@ -27,23 +27,23 @@ my $one = Math::BigInt->bone();			# hailstone, sin, cos etc
 my $two = Math::BigInt->new(2);			# hailstone, sin, cos etc
 my $three = Math::BigInt->new(3);		# hailstone
    
-my $five = Math::BigFloat->new(5);
-my $twothreenine = Math::BigFloat->new(239);
+my $five = Math::BigFloat->new(5);		# for pi
+my $twothreenine = Math::BigFloat->new(239);	# for pi
 
 sub primes
   {
   my $amount = shift; $amount = 1000 if !defined $amount;
   $amount = Math::BigInt->new($amount) unless ref $amount;
 
-  return (Math::BigInt->new(2)) if $amount < 3;
+  return (Math::BigInt->new(2)) if $amount < $three;
   
   $amount++;  
 
   # any not defined number is prime, 0,1 are not, but 2 is
   my @primes = (1,1,0); 
-  my $prime = Math::BigInt->new (3);      # start
+  my $prime = $three->copy();			# start
   my $r = 0; my $a = $amount->numify();
-  for (my $i = 3; $i < $a; $i++)             # int version
+  for (my $i = 3; $i < $a; $i++)		# int version
     {
     $primes[$i] = $r; $r = 1-$r;
     }
@@ -56,24 +56,36 @@ sub primes
     $cur = $prime;
     while ($primes[$cur])
       {
-      $cur += 2; last OUTER if $cur >= $amount;   # no more to do
+      $cur += $two; last OUTER if $cur >= $amount;	# no more to do
       }
     # $cur is now new prime
     # now strike out all multiples of $cur
-    $add = $cur*2;
-    $prime = $cur + 2;                    # next round start two higher
+    $add = $cur * $two;
+    $prime = $cur + $two;			# next round start two higher
     $cur += $add;
     while ($cur <= $amount)
       {
       $primes[$cur] = 1; $cur += $add;
       }
     }
+
+  if (!wantarray)
+    {
+    my $n = 0;
+    for my $p (@primes)
+      {
+      $n++ if $p == 0;
+      }
+    return Math::BigInt->new($n);
+    }
+
   my @real_primes; my $i = 0;
   while ($i < scalar @primes)
     {
     push @real_primes, Math::BigInt->new($i) if $primes[$i] == 0;
     $i ++;
     }
+
   @real_primes;
   }
   
@@ -207,7 +219,7 @@ sub fibonacci_fast
     {
     $fibo[$level]->{$f} = $F[$f];
     }
- my $l = $level;		# for statistics
+  my $l = $level;		# for statistics
   while ($level > 0)
     {
     $level--;
@@ -253,6 +265,44 @@ sub base
   ($n,$a);
   }
 
+sub to_base
+  {
+  # after an idea by Tilghman Lesher
+  my ($x, $base, $alphabet) = @_;
+
+  $x = Math::BigInt->new($x) unless ref $x;
+ 
+  return '0' if $x->is_zero();
+ 
+  # setup defaults:
+  $base = 2 unless defined $base;
+  my @digits = $alphabet ? split //, $alphabet : ('0' .. '9', 'A' .. 'Z');
+
+  if ($base > scalar(@digits))
+    {
+    require Carp;
+    Carp::carp("Base $base higher base than number of digits (" . scalar @digits . ") in alphabet");
+    }
+
+  if (!$x->is_pos())
+    {
+    require Carp;
+    Carp::carp("to_base() needs a positive number");
+    }
+
+  my $o = $x->copy();
+  my $r;
+ 
+  my $result = '';
+  while (!$o->is_zero)
+    {
+    ($o, $r) = $o->bdiv($base);
+    $result = $digits[$r] . $result;
+    }
+
+  $result;
+  }
+
 sub hailstone
   {
   # return in list context the hailstone sequence, in scalar context the
@@ -261,42 +311,59 @@ sub hailstone
 
   $n = Math::BigInt->new($n) unless ref $n;
  
-  return if $n->is_nan() || $n < 0;
+  return if $n->is_nan() || $n->is_negative();
+ 
+  # Use the Math::BigInt lib directly for more speed, since all numbers
+  # involved are positive integers.
+ 
+  my $lib = Math::BigInt->config()->{lib};
+  $n = $n->{value};
+  my $three_ = $three->{value};
+  my $two_ = $two->{value};
 
   if (wantarray)
     {
     my @seq;
-    while (!$n->is_one())
+    while (! $lib->_is_one($n))
       {
-      push @seq, $n->copy();
-      if ($n->is_odd())
+      # push @seq, Math::BigInt->new( $lib->_str($n) );
+      push @seq, bless { value => $lib->_copy($n), sign => '+' }, "Math::BigInt";
+
+      # was: ($n->is_odd()) ? ($n = $n * 3 + 1) : ($n = $n / 2);
+      if ($lib->_is_odd($n))
         {
-        $n->bmul($three)->badd($one);
+        $n = $lib->_mul ($n, $three_); $n = $lib->_inc ($n);
+
+        # We now know that $n is at least 10 ( (3 * 3) + 1 ) because $n > 1
+        # before we entered, and since $n was odd, it must have been at least
+        # 3. So the next step is $n /= 2:
+        push @seq, bless { value => $lib->_copy($n), sign => '+' }, "Math::BigInt";
+        # this is better, but slower:
+        #push @seq, Math::BigInt->new( $lib->_str($n) );
+        # next step is $n /= 2 as usual (we save the else {} block, too)
         }
-      else
-        {
-        $n->bdiv($two);
-        }
-      #($n->is_odd()) ? ($n = $n * 3 + 1) : ($n = $n / 2);
+      $n = $lib->_div($n, $two_);
       }
-    push @seq, Math::BigInt->new(1);
+    push @seq, Math::BigInt->bone();
     return @seq;
     }
 
   my $i = 1;
-  while (!$n->is_one())
+  while (! $lib->_is_one($n))
     {
     $i++;
-    #($n->is_odd()) ? ($n = $n * 3 + 1) : ($n = $n / 2);
-    if ($n->is_odd())
+    # was: ($n->is_odd()) ? ($n = $n * 3 + 1) : ($n = $n / 2);
+    if ($lib->_is_odd($n))
       {
-      $n->bmul($three)->badd($one);
+      $n = $lib->_mul ($n, $three_); $n = $lib->_inc ($n);
+
+      # We now know that $n is at least 10 ( (3 * 3) + 1 ) because $n > 1
+      # before we entered, and since $n was odd, it must have been at least
+      # 3. So the next step is $n /= 2:
+      # next step is $n /= 2 as usual (we save the else {} block, too)
+      $i++;			# one more (we know that $n cannot be 1)
       }
-    else
-      {
-      $n->bdiv($two);
-      }
-    #($n->is_odd()) ? ($n = $n * 3 + 1) : ($n = $n / 2);
+    $n = $lib->_div($n, $two_);
     }
   Math::BigInt->new($i);
   }
@@ -322,20 +389,25 @@ sub bernoulli
   # fraction, in list context as two Math:BigFloats, which, if divided, give
   # the same result. The series runs this:
   # 1/6, 1/30, 1/42, 1/30, 5/66, 691/2730, etc
+
   # Since I do not have yet a way to compute this, I have a table of the
-  # first 20. So bernoulli(41) will fail for now.
+  # first 40. So bernoulli(41) will fail for now.
+
   my $n = shift;
  
   return if $n < 0;
   my @table_1 = ( 1,1, -1,2 );					# 0, 1
   my @table = ( 			
                 1,6, -1,30, 1,42, -1,30, 5,66, -691,2730,	# 2, 4, 
-                7,6, -3617,510, 43867,798, -174611,330,
-                854513,138, -236364091,2730, 8553103,6,
-                -23749461029,870,
-                8615841276005,14322,
-		-7709321041217,510,
-		2577687858367,6,
+                7,6, -3617,510, 43867,798,
+		-174611,330,
+                854513,138,
+		'-236364091',2730,
+		'8553103',6,
+                '-23749461029',870,
+                '8615841276005',14322,
+		'-7709321041217',510,
+		'2577687858367',6,
 		'-26315271553053477373',1919190,
 		'2929993913841559',6,
 		'-261082718496449122051',13530,			# 40
@@ -346,17 +418,21 @@ sub bernoulli
     $a = Math::BigFloat->new($table_1[$n*2]);
     $b = Math::BigFloat->new($table_1[$n*2+1]);
     }
-  elsif ($n & 1 == 1)
+  # n is odd:
+  elsif (($n & 1) == 1)
     {
     $a = Math::BigFloat->bzero();
     $b = Math::BigFloat->bone();
     }
-  else
+  elsif ($n <= 40)
     {
-    die 'Bernoulli numbers over 40 not yet implemented.' if $n > 40;
     $n -= 2;
     $a = Math::BigFloat->new($table[$n]);
     $b = Math::BigFloat->new($table[$n+1]);
+    }
+  else
+    {
+    die 'Bernoulli numbers over 40 not yet implemented.' if $n > 40;
     }
   wantarray ? ($a,$b): $a/$b;
   }
@@ -380,15 +456,18 @@ sub euler
   # difference for each term is thus x and n:
   # 2 copy, 2 mul, 2 add, 1 div
   
-  my $e = Math::BigFloat->new(1); my $last = 0;
+  my $e = Math::BigFloat->bone(); my $last = 0;
   my $over = $x->copy(); my $below = Math::BigFloat->bone(); my $factorial = Math::BigFloat->new(2);
+
+  my $x_is_one = $x->is_one();
+
   # no $e-$last > $diff because bdiv() limit on accuracy
   while ($e->bcmp($last) != 0)
     {
     $last = $e->copy();
     $e += $over->copy()->bdiv($below,$d);
-    $over *= $x if !$x->is_one();
-    $below *= $factorial; $factorial++;
+    $over *= $x unless $x_is_one;
+    $below *= $factorial; $factorial->binc();
     }
   $e->bround($d-1);
   }
@@ -837,13 +916,14 @@ examples.
 =head2 B<primes()>
 
 	@primes = primes($n);
-	$prime  = primes($n);
+	$primes = primes($n);
 
-Calculates the first N primes and returns them as array.
-In scalar context returns the Nth prime.
+Calculates all the primes below N and returns them as array. In scalar context
+returns the number of primes below N.
   
-This uses an optimzes version of the B<Sieve of Eratosthenes>, which takes
-half of the time and half of the space, but is still O(N).
+This uses an optimized version of the B<Sieve of Eratosthenes>, which takes
+half of the time and half of the space, but is still O(N). Or in other words,
+quite slow.
 
 =head2 B<fibonacci()>
 
@@ -884,7 +964,7 @@ apparently does so. The number of steps is somewhat chaotically.
 
 	($n,$a) = base($number,$base);
 
-Reduces a number to $base to the $nth power plus $a. Example:
+Reduces a number to C<$base> to the C<$n>th power plus C<$a>. Example:
 
 	use Math::BigInt :constant;
 	use Math::Big qw/base/;
@@ -892,6 +972,21 @@ Reduces a number to $base to the $nth power plus $a. Example:
 	print base ( 2 ** 150 + 42,2);
 
 This will print 150 and 42.
+
+=head2 B<to_base()>
+
+	$string = to_base($number,$base);
+
+	$string = to_base($number,$base, $alphabet);
+
+Returns a string of C<$number> in base C<$base>. The alphabet is optional if
+C<$base> is less or equal than 36. C<$alphabet> is a string.
+
+Examples:
+
+	print to_base(15,2);		# 1111
+	print to_base(15,16);		# F
+	print to_base(31,16);		# 1F
 
 =head2 B<factorial()>
 
@@ -906,7 +1001,7 @@ Uses internally Math::BigInt's bfac() method.
 	$b = bernoulli($n);
 	($c,$d) = bernoulli($n);	# $b = $c/$d
 
-Calculate the Nth number in the I<Bernoulli> series. Only the first 20 are
+Calculate the Nth number in the I<Bernoulli> series. Only the first 40 are
 defined for now.
 
 =head2 B<euler()>
@@ -920,55 +1015,55 @@ Defaults to 1 and 42 digits.
 
 	$sin = sin($x,$d);
 
-Calculate I<sinus> of x, to $d digits.
+Calculate I<sinus> of C<$x>, to C<$d> digits.
 
 =head2 B<cos()>
 
 	$cos = cos($x,$d);
 
-Calculate I<cosinus> of x, to $d digits.
+Calculate I<cosinus> of C<$x>, to C<$d> digits.
 
 =head2 B<tan()>
 
 	$tan = tan($x,$d);
 
-Calculate I<tangens> of x, to $d digits.
+Calculate I<tangens> of C<$x>, to C<$d> digits.
 
 =head2 B<arctan()>
 
 	$arctan = arctan($x,$d);
 
-Calculate I<arcus tangens> of x, to $d digits.
+Calculate I<arcus tangens> of C<$x>, to C<$d> digits.
 
 =head2 B<arcsin()>
 
 	$arcsin = arcsin($x,$d);
 
-Calculate I<arcus sinus> of x, to $d digits.
+Calculate I<arcus sinus> of C<$x>, to C<$d> digits.
 
 =head2 B<arcsinh()>
 
 	$arcsinh = arcsinh($x,$d);
 
-Calculate I<arcus sinus hyperbolicus> of x, to $d digits.
+Calculate I<arcus sinus hyperbolicus> of C<$x>, to C<$d> digits.
 
 =head2 B<cosh()>
 
 	$cosh = cosh($x,$d);
 
-Calculate I<cosinus hyperbolicus> of x, to $d digits.
+Calculate I<cosinus hyperbolicus> of C<$x>, to C<$d> digits.
 
 =head2 B<sinh()>
 
 	$sinh = sinh($x,$d);
 
-Calculate I<sinus hyperbolicus> of x, to $d digits.
+Calculate I<sinus hyperbolicus> of $<$x>, to C<$d> digits.
 
 =head2 B<pi()>
 
-	$pi = pi(1024);
+	$pi = pi($N);
 
-The number PI to 1024 digits after the dot.
+The number PI to C<$N> digits after the dot.
 
 =head2 B<log()>
 
@@ -977,7 +1072,7 @@ The number PI to 1024 digits after the dot.
 Calculates the logarithmn of C<$number> to base C<$base>, with C<$A> digits accuracy
 and returns a new number as the result (leaving C<$number> alone).
 
-BigInts are promoted to BigFloats, meaning you will always not get a truncated
+BigInts are promoted to BigFloats, meaning you will never get a truncated
 integer result like when using C<Math::BigInt::blog>.
 
 =head1 BUGS
@@ -1000,7 +1095,7 @@ arbitrarily big numbers in O(N) time:
 =item *
 
 The Bernoulli numbers are not yet calculated, but looked up in a table, which
-has only 20 elements. So C<bernoulli($x)> with $x > 42 will fail.
+has only 40 elements. So C<bernoulli($x)> with $x > 42 will fail.
 
 If you know of an algorithmn to calculate them, please drop me a note.
 
@@ -1019,7 +1114,7 @@ to hear about how my code helps you ;)
 Quite a lot of ideas from other people, especially D. E. Knuth, have been used,
 thank you!
 
-Tels http://bloodgate.com 2001-2004.
+Tels http://bloodgate.com 2001 - 2005.
 
 =cut
 

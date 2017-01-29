@@ -1,9 +1,11 @@
-Math::Big - usefull routines and packages with Math::BigInt/BigFloat
 
-(C) ..--- ----- ----- .---- by - . .-.. ... .-.-.-  All rights reserved.
+Math::Big - (C) 2001 - 2005 by - . .-.. ... .-.-.-
 
-This needs the new versions of Math::BigInt and Math::BigFloat, as they are
-on CPAN as 'Math::BigInt' or Perl newer v5.7.1.
+This module needs the new versions of Math::BigInt and Math::BigFloat, as
+they are on CPAN in the package 'Math::BigInt' or in Perl v5.7.1 or newer.
+
+INSTALLATION
+============
 
 Untar and unzip package, then run
 
@@ -13,7 +15,10 @@ Untar and unzip package, then run
 	make install		# as root
 
 For a quick reference on what has changed from the old versions, please see
-CHANGES. HISTORY brings you a detailed history log of the rewrite.
+NEW. CHANGES contains the complete version history.
+
+EXAMPLES
+========
 
 In ./examples are some basic example scripts.
 
