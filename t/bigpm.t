@@ -8,7 +8,7 @@ BEGIN
   $| = 1;
   chdir 't' if -d 't';
   unshift @INC, '../lib'; # for running manually
-  plan tests => 125;
+  plan tests => 126;
   }
 
 use Math::BigInt;
@@ -122,6 +122,7 @@ __END__
 1:1
 2:2
 3:6
+4:24
 10:3628800
 13:6227020800
 &euler:2

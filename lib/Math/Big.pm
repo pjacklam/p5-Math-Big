@@ -8,7 +8,7 @@
 
 package Math::Big;
 use vars qw($VERSION);
-$VERSION = 1.08;    # Current version of this package
+$VERSION = 1.09;    # Current version of this package
 require  5.005;     # requires this Perl version or later
 
 use Math::BigInt;
@@ -301,18 +301,17 @@ sub hailstone
 
 sub factorial
   {
-  # calculate n!, n is limited to a Perl floating point number
-  # not a problem since n = 1e5 already takes way too long...
-  my ($n,$i) = shift;
+  # calculate n! - use Math::BigInt bfac() for speed
+  my ($n) = shift;
 
-  my $res = Math::BigInt->new(1);
-
-  return $res if $n < 1;
-  for ($i = 2; $i <= $n; $i++)
+  if (ref($n) =~ /^Math::BigInt/)
     {
-    $res *= $i;
+    $n->copy()->bfac();
     }
-  return $res;
+  else
+    {
+    Math::BigInt->new($n)->bfac();
+    }
   }
 
 sub bernoulli
@@ -928,11 +927,11 @@ This will print 150 and 42.
 
 =head2 B<factorial()>
 
-	$n = factorial($number,$factorial);
+	$n = factorial($number);
 
-Calculate n! for n >= 1 and returns the result. Please note that the native
-Math::BigInt->bfac() method is much faster than the straight-forward Perl
-version in Math::Big.
+Calculate C<n!> for C<n >= 0>.
+
+Uses internally Math::BigInt's bfac() method. 
 
 =head2 B<bernoulli()>
 
@@ -1031,10 +1030,6 @@ arbitrarily big numbers in O(N) time:
 The Bernoulli numbers are not yet calculated, but looked up in a table, which
 has only 20 elements. So C<bernoulli($x)> with $x > 42 will fail.
 
-=item *
-
-pi() does not work yet, it is buggy.
-
 =back
 
 =head1 LICENSE
@@ -1050,7 +1045,7 @@ to hear about how my code helps you ;)
 Quite a lot of ideas from other people, especially D. E. Knuth, have been used,
 thank you!
 
-Tels http://bloodgate.com 2001.
+Tels http://bloodgate.com 2001-2003.
 
 =cut
 
