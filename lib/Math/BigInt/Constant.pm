@@ -1,11 +1,9 @@
 #!/usr/bin/perl -w
 
-# 2001-03-27 v1.01 Tels
- 
 package Math::BigInt::Constant;
 my $class = "Math::BigInt::Constant";
 
-$VERSION = 1.01;
+$VERSION = 1.03;
 use Exporter;
 use Math::BigInt;
 @ISA =       qw( Exporter Math::BigInt );
@@ -16,7 +14,7 @@ use strict;
 use overload; 
 
 ##############################################################################
-# we are a true Math::BigInt, but we can not be modified
+# We Are a True Math::BigInt, But Thou Shallst Not Modify Us
 
 sub modify
   {
@@ -27,14 +25,14 @@ sub modify
   }
 
 ##############################################################################
-# But cloning us creates a modifable Math::BigInt, so that overload works
+# But cloning us creates a modifyable Math::BigInt, so that overload works
 
 sub copy
   {
   my $x = shift;
 
-  my $self = $x->SUPER::copy($x);
-  bless $self, 'Math::BigInt';
+  $x = Math::BigInt::Constant->new($x) if !ref($x);
+  my $self = Math::BigInt->copy($x);
   }
 
 1;
