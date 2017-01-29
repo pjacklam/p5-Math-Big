@@ -1,0 +1,28 @@
+Math::Big - usefull routines and packages with Math::BigInt/BigFloat
+
+(C) ..--- ----- ----- .---- by - . .-.. ... .-.-.-  All rights reserved.
+
+This needs the new versions of Math::BigInt and Math::BigFloat, as they are
+on CPAN as 'Math::BigInt' or Perl newer v5.7.1.
+
+Untar and unzip package, then run
+
+	perl Makefile.PL
+	make
+	make test
+	make install		# as root
+
+For a quick reference on what has changed from the old versions, please see
+CHANGES. HISTORY brings you a detailed history log of the rewrite.
+
+In ./examples are some basic example scripts.
+
+More information including HTMLified help and benchmark results are
+available under:
+
+	http://bloodgate.com/perl/
+
+Please send me test-reports, your experiences with this and your ideas - I love
+to hear about my work!
+
+Tels <http://bloodgate.com/>

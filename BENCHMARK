@@ -1,0 +1,30 @@
+Here are some benchmark results done with the different versions. v0.01 denotes
+the original Perl 5.6.0 and earlier code of BigInt/BigFloat.
+
+The following calculates n!:
+
+sub factorial
+  {
+  my ($n,$i) = shift;
+  my $res = Math::BigInt->new(1);
+  return $res if $n < 1;
+  for ($i = 2; $i <= $n; $i++)
+    {
+    $res *= $i;
+    }
+  return $res;
+  }
+
+Time for a single calculation of factorial(n), done on a 300 Mhz PIII:
+
+       Version:
+    n:	 v0.01	v1.30	SSLeay::BN
+
+   500	  4.18	1.74	0.35
+  1000   18.25  7.03    0.78
+  2000   80.91 29.70	1.13
+
+Note: The values for SSLeay::BN were interpolated (aka guessed) by taking
+benchmarks from "Algorithmns in Perl", (page 486 in German version), and than
+scaling the numbers to match the speed of v0.01 on this machine.
+
