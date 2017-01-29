@@ -8,7 +8,7 @@ BEGIN
   $| = 1;
   # chdir 't' if -d 't';
   unshift @INC, '../lib'; # for running manually
-  plan tests => 68;
+  plan tests => 70;
   }
 
 use Math::BigInt::Constant;
@@ -22,6 +22,11 @@ ok ($x+2,10);
 ok ($x->bfloor(),8);
 ok ($x->bceil(),8);
 
+my $y = Math::BigInt::Constant->new(32);
+ok ($x->bgcd($y),8);
+$y = Math::BigInt::Constant->new(53);
+my $z = Math::BigInt::Constant->new(19);
+ok ($x->blcm($y,$z),19*53*8);	
 my ($try,$rc);
 
 # 21*3 tests

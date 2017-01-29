@@ -8,7 +8,7 @@
 
 package Math::Big;
 use vars qw($VERSION);
-$VERSION = 1.04;    # Current version of this package
+$VERSION = 1.05;    # Current version of this package
 require  5.005;     # requires this Perl version or later
 
 use Math::BigInt;
@@ -237,8 +237,9 @@ sub euler
   # 2 copy, 2 mul, 2 add, 1 div
   
   my $e = Math::BigFloat->new(1); my $last = 0;
-  my $over = $x; my $below = 1; my $factorial = Math::BigInt->new(2);
-  while ($e ne $last) 	# no $e-$last > $diff because bdiv() limit on accuracy
+  my $over = $x->copy(); my $below = 1; my $factorial = Math::BigInt->new(2);
+  # no $e-$last > $diff because bdiv() limit on accuracy
+  while ($e ne $last)
     {
     $last = $e->copy();
     $e += $over->copy()->bdiv($below,$d);

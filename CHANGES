@@ -20,9 +20,10 @@ Math::Big:
 2001-06-11 1.04: added: euler, bernoulli, cos, tan, sin, cosh, sinh, 
 			arctan, arctanh, arcsin, arcsinh,
 		 moved: wheel, factor_wheel => Math::Big::Factorial
+2001-07-09 1.05: version increase for CPAN release
 
 ############################################################################## 
-Math::Big::Factorial:
+Math::Big::Factors:
 
 2001-06-15 1.00: first version from Math::Big
 
@@ -34,6 +35,7 @@ Math::BigInt::Constant:
 2000-06-15 1.02: fixed documentation to match current version
 		 added tests for band(), bior(), bxor(), bceil(), bfloor(),
 		 bnan() and binf()
+2000-06-29 1.03: fixed copy(); added tests for bgcd() and blcm()
 
 Please send me test-reports, your experiences with this and your ideas - I love
 to hear about my work!
