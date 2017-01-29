@@ -8,7 +8,7 @@
 
 package Math::Big;
 use vars qw($VERSION);
-$VERSION = 1.06;    # Current version of this package
+$VERSION = 1.07;    # Current version of this package
 require  5.005;     # requires this Perl version or later
 
 use Math::BigInt;
@@ -302,7 +302,7 @@ sub hailstone
 sub factorial
   {
   # calculate n!, n is limited to a Perl floating point number
-  # not a problem since n = 1e5 already takes too long...
+  # not a problem since n = 1e5 already takes way too long...
   my ($n,$i) = shift;
 
   my $res = Math::BigInt->new(1);
@@ -779,7 +779,7 @@ sub log
   my $sign = 0; my $last = 0;
   while ($log ne $last)
     {
-    print "$log $over $below $sign\n";
+    # print "$log $over $below $sign\n";
     $last = $log->copy();
     if ($sign == 0)
       {
@@ -903,9 +903,9 @@ Math::Big - routines (cos,sin,primes,hailstone,euler,fibbonaci etc) with big num
     $arcsinh = arcsin(0.5,18);	# arcus sinus hyperbolicus to 18 digits
 
     $pi      = pi(1024);	# first 1024 digits
-    $log     = log(64,2);	# 2 ** 6 == 64
-    $log     = log(100,10);	# 10 ** 100 == 2
-    $log     = log(100);	# base is 10 by default
+    $log     = log(64,2);	# $log==6, because 2**6==64
+    $log     = log(100,10);	# $log==2, because 10**2==100
+    $log     = log(100);	# base defaults to 10: $log==2
 
 =head1 REQUIRES
 
@@ -988,7 +988,9 @@ This will print 150 and 42.
 
 	$n = factorial($number,$factorial);
 
-Calculate n! for n >= 1 and returns the result.
+Calculate n! for n >= 1 and returns the result. Please note that the native
+Math::BigInt->bfac() method is much faster than the straight-forward Perl
+version in Math::Big.
 
 =head2 B<bernoulli()>
 

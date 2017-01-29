@@ -1,8 +1,7 @@
-This lists only the changes for the current release (v1.06) over the last
+This lists only the changes for the current release (v1.07) over the last
 version, since HISTORY is now quite big:
 
-* fixed some nits in Math::BigInt::Constant and added tests
-* split up and Math:Roman
-* fibonacci() uses an ultra-fast conquer-divide algorithmn to calculate the
-  result and is many times faster than the old version
-
+* fixed typo in doc spotted by Mark Overmeer
+* removed some left-over debug printouts, whoops
+* documented that Math::BigInt::bfac() is faster than Math::Big::factorial()
+* broke out Math::BigInt::Constant to extra package
