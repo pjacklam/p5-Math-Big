@@ -3,8 +3,8 @@
 
 package Math::Big::Factors;
 use vars qw($VERSION);
-$VERSION = 1.01;    # Current version of this package
-require  5.005;     # requires this Perl version or later
+$VERSION = 1.02;    # Current version of this package
+require  5.006002;  # requires this Perl version or later
 
 use Math::BigInt;
 use Math::BigFloat;
@@ -175,7 +175,7 @@ sub factors_wheel
   @factors;
   }
 
-sub factor
+sub _factor
   {
   # later: factor ( n => $n, algorithmn => 'wheel', order => 3 );
   }
@@ -233,7 +233,7 @@ usually benefit from order 7.
 
 =head2 B<factors_wheel()>
 
-Factor a number into it's prime factors and return a list of factors.
+Factor a number into its prime factors and return a list of factors.
 
 =head1 BUGS
 
@@ -252,7 +252,7 @@ to hear about how my code helps you ;)
 Quite a lot of ideas from other people, especially D. E. Knuth, have been used,
 thank you!
 
-Tels http://bloodgate.com 2001-2004.
+Tels http://bloodgate.com 2001-2007.
 
 =cut
 

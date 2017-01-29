@@ -2,8 +2,18 @@
 Complete version history
 ========================
 
+2007-04-17 1.12 Tels 182 tests 
+  * speed up fibonacci():
+    + by not making the argument a BigInt
+    + caching a few more numbers
+    + removing a few needless scalar computations
+  * fix bug in fibonacci() missing a few intermidiate results
+  * euler() just uses BigInt's fast bexp() method and is thus now MUHC faster
+  * require Math::BigInt v1.83 (and thus Perl v5.6.2)
+  * bundle and use Module::Install
+
 ############################################################################## 
-Math::Big:
+Older changelog for Math::Big:
 
 2001-03-17 1.00: first version with primes(), fibonacci(), base()
 2001-03-24 1.01: added: hailstone()

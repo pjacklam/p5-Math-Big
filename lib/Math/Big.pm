@@ -4,17 +4,16 @@
 package Math::Big;
 use vars qw(@ISA $VERSION @EXPORT_OK);
 use strict;
-$VERSION = '1.11';	# Current version of this package
-require  5.005;		# requires this Perl version or later
+$VERSION = '1.12';	# Current version of this package
+require  5.006002;	# anything lower is simple untested
 
 use Math::BigInt;
 use Math::BigFloat;
 use Exporter;
 @ISA = qw( Exporter );
 @EXPORT_OK = qw( primes fibonacci base hailstone factorial
-		 euler bernoulli pi
+		 euler bernoulli pi log
 		 tan cos sin cosh sinh arctan arctanh arcsin arcsinh
-		 log
                );
 
 use vars qw/@F/;				# for fibonacci()
@@ -91,14 +90,25 @@ sub primes
   
 sub fibonacci
   {
-  my $n = shift || 0;
-  $n = Math::BigInt->new($n) unless ref $n;
+  my $n = shift; return unless defined $n;
 
-  return if $n->sign() ne '+';		# < 0, NaN, inf
+  if (ref($n))
+    {
+    return if $n->sign() ne '+';		# < 0, NaN, inf
+    }
+  else
+    {
+    return if $n < 0;
+    }
+
   #####################
   # list context
   if (wantarray)
     {
+    # make a scalar (if $n doesn't fit into a scalar, the resulting array
+    # will be too big, anyway)
+    $n = $n->numify() if ref($n);
+
     my @fib = (Math::BigInt::bzero(),Math::BigInt::bone(),Math::BigInt::bone);
     my $i = 3;							# no BigInt
     while ($i <= $n)
@@ -110,24 +120,41 @@ sub fibonacci
   #####################
   # scalar context
 
-  fibonacci_fast($n);
+  _fibonacci_fast($n);
   }
 
 my $F;
 
 BEGIN
   {
-  #     0,1,2,3,4,5,6,7, 8, 9, 10,11,12, 13, 14, 15, 16,  17, 18, 19
-  @F = (0,1,1,2,3,5,8,13,21,34,55,89,144,233,377,610,987,1597,2584,4181);
+  # Sequence of the first few fibonacci numbers:
+
+  #     0,1,2,3,4,5,6,7, 8, 9, 10,11,12, 13, 14, 15, 16, 17,  18,  19,  20,
+  @F = (0,1,1,2,3,5,8,13,21,34,55,89,144,233,377,610,987,1597,2584,4181,6765,
+  #     21,
+        10946, 17711, 28657, 46368, 75025, 121393, 196418, 317811, 514229, 
+  #     30,
+        832040, 1346269, 2178309, 3524578, 5702887, 9227465, 14930352,
+  #     37,                                                 42,
+        24157817, 39088169, 63245986, 102334155, 165580141, 267914296,
+  );
+#433494437
+#701408733
+#1134903170
+#1836311903
+#2971215073
+#4807526976
+#7778742049
+#12586269025
   for (my $i = 0; $i < @F; $i++)
     {
     $F[$i] = Math::BigInt->new($F[$i]);
     }
   }
 
-sub fibonacci_fast
+sub _fibonacci_fast
   {
-  my $x = shift || 0;
+  my $x = shift; $x = $x->numify() if ref($x);
   return $F[$x] if $x < @F;
  
   # Knuth, TAOCR Vol 1, Third Edition, p. 81
@@ -147,8 +174,9 @@ sub fibonacci_fast
   # to calculate all Fn of the previous level. Here is an example for F1000:
   
   # To calculate F1000, we need F999 and F1001 (since 1000 is even)
-  # To calculate F999, we need F((999-1)/2) and F((999-1)/+2), this are 499
-  # and 500. For F1001 we need likewise 500 and 501:
+  # To calculate F999, we need F((999-1)/2) and F((999+1)/2), this are 499
+  # and 500. Sine for F1001 we need 500 and 501, we need F(500), F(501) and
+  # F(499) to calculate F(1001) and F(999), and from these we can get F(1000).
   # For 500, we need 499 and 501, both are already needed.
   # For 501, we need 250 and 251. An so on and on until all values at a level
   # are under 17.
@@ -164,11 +192,11 @@ sub fibonacci_fast
   #                       |------>  251
 
   my @fibo;
-  $fibo[0]->{$x} = 1;			# our final result
+  $fibo[0]->{$x} = undef;		# mark our final result as needed
   # if $x is even we need these two, too
   if ($x % 1 == 0)
     {
-    $fibo[0]->{$x-1} = 1; $fibo[0]->{$x+1} = 1;
+    $fibo[0]->{$x-1} = undef; $fibo[0]->{$x+1} = undef;
     }
   # XXX
   # for statistics
@@ -192,14 +220,16 @@ sub fibonacci_fast
 	$t = $f-1;
         if (!exists $fibo[$level-1]->{$t})
           {
-          $fibo[$level-1]->{$t} = 1; $t--; $t /= 2;	# $t is odd
-          $fibo[$level]->{$t} = 1; $fibo[$level]->{$t+1} = 1;
+          $fibo[$level-1]->{$t} = undef; $t--; $t /= 2;			# $t is odd
+          $fibo[$level]->{$t} = undef; $fibo[$level]->{$t+1} = undef;
+          $high = 1 if $t+1 >= @F;	# any value not in table?
           } 
 	$t = $f+1;
         if (!exists $fibo[$level-1]->{$t})
           {
-          $fibo[$level-1]->{$t} = 1; $t--; $t /= 2;	# $t is odd
-          $fibo[$level]->{$t} = 1; $fibo[$level]->{$t+1} = 1;
+          $fibo[$level-1]->{$t} = undef; $t--; $t /= 2;			# $t is odd
+          $fibo[$level]->{$t} = undef; $fibo[$level]->{$t+1} = undef;
+          $high = 1 if $t+1 >= @F;	# any value not in table?
           } 
 #        print "$f even: ",$f-1," ",$f+1," in level ",$level-1,"\n";
         } 
@@ -207,7 +237,7 @@ sub fibonacci_fast
         {
         # else add ($_-1)/2and ($_-1)/2 + 1 to this level
         $t = $f-1; $t /= 2;
-        $fibo[$level]->{$t} = 1; $fibo[$level]->{$t+1} = 1;
+        $fibo[$level]->{$t} = undef; $fibo[$level]->{$t+1} = undef;
         $high = 1 if $t+1 >= @F;	# any value not in table?
 #       print "$_ odd: $t ",$t+1," in level $level (high = $high)\n";
         }
@@ -217,29 +247,33 @@ sub fibonacci_fast
   # numbers in the last level can be looked up:
   foreach $f (keys %{$fibo[$level]})
     {
+    # this inserts Math::BigInt objects, making the math below work:
     $fibo[$level]->{$f} = $F[$f];
     }
-  my $l = $level;		# for statistics
+#  use Data::Dumper; print Dumper(\@fibo);
+  my $l = $level;				# for statistics
   while ($level > 0)
     {
     $level--;
-    $sum += scalar keys %{$fibo[$level]};
+    #$sum += scalar keys %{$fibo[$level]};	# for statistics
     # first do the odd ones
-    foreach $f (keys %{$fibo[$level]})
+    my $fibo_level = $fibo[$level];
+    foreach $f (keys %$fibo_level)
       {
       next if ($f & 1) == 0;
       $t = $f-1; $t /= 2; my $t1 = $t+1;
       $t = $fibo[$level+1]->{$t}; 
       $t1 = $fibo[$level+1]->{$t1};
-      $fibo[$level]->{$f} = $t*$t+$t1*$t1;
-      $mul += 2; $add ++;
+      #$fibo_level->{$f} = $t*$t+$t1*$t1;
+      $fibo_level->{$f} = $t->copy->bmul($t)->badd($t1->copy()->bmul($t1));
+      #$mul += 2; $add ++;			# for statistics
       }
     # now the even ones
     foreach $f (keys %{$fibo[$level]})
       {
       next if ($f & 1) != 0;
       $fibo[$level]->{$f} = $fibo[$level]->{$f+1} - $fibo[$level]->{$f-1};
-      $add ++;
+      #$add ++;					# for statistics
       }
     }
 #  print "sum $sum level $l => ",$sum/$l," steps $steps adds $add muls $mul\n";
@@ -358,9 +392,8 @@ sub hailstone
       $n = $lib->_mul ($n, $three_); $n = $lib->_inc ($n);
 
       # We now know that $n is at least 10 ( (3 * 3) + 1 ) because $n > 1
-      # before we entered, and since $n was odd, it must have been at least
-      # 3. So the next step is $n /= 2:
-      # next step is $n /= 2 as usual (we save the else {} block, too)
+      # before we entered, and since $n was odd, it must have been at least 3.
+      # So the next step is $n /= 2 as usual (we save the else {} block, too).
       $i++;			# one more (we know that $n cannot be 1)
       }
     $n = $lib->_div($n, $two_);
@@ -373,7 +406,7 @@ sub factorial
   # calculate n! - use Math::BigInt bfac() for speed
   my ($n) = shift;
 
-  if (ref($n) =~ /^Math::BigInt/)
+  if (ref($n))
     {
     $n->copy()->bfac();
     }
@@ -439,37 +472,15 @@ sub bernoulli
 
 sub euler
   {
-  # calculate Euler's constant
+  # Calculate Euler's number.
   # first argument is x, so that result is e ** x
   # Second argument is accuracy (number of significant digits), it
   # stops when at least so much plus one digits are 'stable' and then
   # rounds it. Default is 42.
-  my $x = abs(shift || 1);
-  my $d = abs(shift || 42); $d = abs($d)+1;
-
-  $x = Math::BigFloat->new($x) if ref($x) ne 'Math::BigFloat';
+  my $x = $_[0];
+  $x = Math::BigFloat->new($x) if !ref($x) || (!$x->isa('Math::BigFloat'));
   
-  # row:	  x    x^2   x^3   x^4
-  #	 e = 1 + --- + --- + --- + --- ...
-  # 		  1!    2!    3!    4!
-
-  # difference for each term is thus x and n:
-  # 2 copy, 2 mul, 2 add, 1 div
-  
-  my $e = Math::BigFloat->bone(); my $last = 0;
-  my $over = $x->copy(); my $below = Math::BigFloat->bone(); my $factorial = Math::BigFloat->new(2);
-
-  my $x_is_one = $x->is_one();
-
-  # no $e-$last > $diff because bdiv() limit on accuracy
-  while ($e->bcmp($last) != 0)
-    {
-    $last = $e->copy();
-    $e += $over->copy()->bdiv($below,$d);
-    $over *= $x unless $x_is_one;
-    $below *= $factorial; $factorial->binc();
-    }
-  $e->bround($d-1);
+  $x->bexp($_[1]);
   }
 
 sub sin
@@ -897,7 +908,7 @@ Math::Big - routines (cos,sin,primes,hailstone,euler,fibbonaci etc) with big num
 
 =head1 REQUIRES
 
-perl5.005, Exporter, Math::BigInt, Math::BigFloat
+perl5.006002, Exporter, Math::BigInt, Math::BigFloat
 
 =head1 EXPORTS
 
@@ -1035,6 +1046,12 @@ Calculate I<tangens> of C<$x>, to C<$d> digits.
 
 Calculate I<arcus tangens> of C<$x>, to C<$d> digits.
 
+=head2 B<arctanh()>
+
+	$arctanh = arctanh($x,$d);
+
+Calculate I<arcus tangens hyperbolicus> of C<$x>, to C<$d> digits.
+
 =head2 B<arcsin()>
 
 	$arcsin = arcsin($x,$d);
@@ -1114,7 +1131,7 @@ to hear about how my code helps you ;)
 Quite a lot of ideas from other people, especially D. E. Knuth, have been used,
 thank you!
 
-Tels http://bloodgate.com 2001 - 2005.
+Tels http://bloodgate.com 2001 - 2007.
 
 =cut
 
