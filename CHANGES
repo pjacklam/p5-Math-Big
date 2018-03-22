@@ -1,5 +1,8 @@
 1.15 Not Released
 
+ * Add test file t/release-test-version.t. Increment version in file that was
+   missed earlier.
+
  * Add test file t/release-portability.t.
 
  * Use the default MANIFEST.SKIP file from ExtUtils::Manifest.
