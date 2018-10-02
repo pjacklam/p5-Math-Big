@@ -1,5 +1,7 @@
 1.15 Not Released
 
+ * Better Makefile.PL.
+
  * The tests now require Test::More version 0.88 or newer.
 
  * Add test files t/release-test-version.t, t/release-portability.t, and
