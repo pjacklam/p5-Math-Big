@@ -1,16 +1,14 @@
 1.15 Not Released
 
- * Add test file t/release-test-version.t. Increment version in file that was
-   missed earlier.
+ * The tests now require Test::More version 0.88 or newer.
 
- * Add test file t/release-portability.t.
-
- * Use the default MANIFEST.SKIP file from ExtUtils::Manifest.
-
- * Format CHANGES according to CPAN::Changes::Spec. Add test file
+ * Add test files t/release-test-version.t, t/release-portability.t, and
    t/release-cpan-changes.t.
 
- * Increment version number.
+ * New MANIFEST.SKIP file based on the template in the ExtUtils-Manifest
+   distribution.
+
+ * Format CHANGES according to CPAN::Changes::Spec.
 
 1.14 2016-12-03 pjacklam
 
