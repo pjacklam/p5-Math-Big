@@ -1,5 +1,7 @@
 1.15 Not Released
 
+ * Make fibonacci() a front-end to Math::BigInt->bfac().
+
  * Convert test files t/pod.t and t/pod_cov.t into t/release-pod.t and
    t/release-pod-coverage.t.
 
