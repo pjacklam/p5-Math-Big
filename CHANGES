@@ -1,5 +1,9 @@
 1.15 Not Released
 
+ * Make to_base() a front-end to Math::BigInt->to_base().
+
+ ' Add to_base() to the list of exported functions.
+
  * Make fibonacci() a front-end to Math::BigInt->bfac().
 
  * Convert test files t/pod.t and t/pod_cov.t into t/release-pod.t and

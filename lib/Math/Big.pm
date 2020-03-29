@@ -14,7 +14,7 @@ use Exporter;
 
 our $VERSION   = '1.15';
 our @ISA       = qw( Exporter );
-our @EXPORT_OK = qw( primes fibonacci base hailstone factorial
+our @EXPORT_OK = qw( primes fibonacci base to_base hailstone factorial
                      euler bernoulli pi log
                      tan cos sin cosh sinh arctan arctanh arcsin arcsinh
                   );
@@ -96,40 +96,10 @@ sub base
 
 sub to_base
   {
-  # after an idea by Tilghman Lesher
-  my ($x, $base, $alphabet) = @_;
-
-  $x = Math::BigInt->new($x) unless ref $x;
-
-  return '0' if $x->is_zero();
-
-  # setup defaults:
-  $base = 2 unless defined $base;
-  my @digits = $alphabet ? split //, $alphabet : ('0' .. '9', 'A' .. 'Z');
-
-  if ($base > scalar(@digits))
-    {
-    require Carp;
-    Carp::carp("Base $base higher base than number of digits (" . scalar @digits . ") in alphabet");
-    }
-
-  if (!$x->is_pos())
-    {
-    require Carp;
-    Carp::carp("to_base() needs a positive number");
-    }
-
-  my $o = $x->copy();
-  my $r;
-
-  my $result = '';
-  while (!$o->is_zero)
-    {
-    ($o, $r) = $o->bdiv($base);
-    $result = $digits[$r] . $result;
-    }
-
-  $result;
+      my $x = shift;
+      $x = Math::BigInt->new($x)
+        unless ref($x) && $x -> isa("Math::BigInt");
+      $x -> to_base(@_);
   }
 
 sub hailstone
