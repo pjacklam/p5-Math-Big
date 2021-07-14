@@ -1,20 +1,19 @@
-1.15 Not Released
+1.15 2021-07-13
+
+ * This release does not add any new functionality. It is just to try to keep
+   the distribution up to date with the Perl environment.
 
  * Make to_base() a front-end to Math::BigInt->to_base().
 
- ' Add to_base() to the list of exported functions.
+ * Add to_base() to the list of exported functions.
 
  * Make fibonacci() a front-end to Math::BigInt->bfac().
 
- * Convert test files t/pod.t and t/pod_cov.t into t/release-pod.t and
-   t/release-pod-coverage.t.
+ * Reorganize existing test files, and add more test files.
 
  * Better Makefile.PL.
 
  * The tests now require Test::More version 0.88 or newer.
-
- * Add test files t/release-test-version.t, t/release-portability.t, and
-   t/release-cpan-changes.t.
 
  * New MANIFEST.SKIP file based on the template in the ExtUtils-Manifest
    distribution.

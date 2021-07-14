@@ -18,7 +18,6 @@ our @EXPORT_OK = qw( primes fibonacci base to_base hailstone factorial
                      euler bernoulli pi log
                      tan cos sin cosh sinh arctan arctanh arcsin arcsinh
                   );
-our @F;						# for fibonacci()
 
 # some often used constants:
 my $four    = Math::BigFloat->new(4);
@@ -892,7 +891,7 @@ If you know of an algorithmn to calculate them, please drop me a note.
 =head1 BUGS
 
 Please report any bugs or feature requests to
-C<bug-math-big at rt.cpan.org>, or through the web interface at
+C<bug-math-bigrat at rt.cpan.org>, or through the web interface at
 L<https://rt.cpan.org/Ticket/Create.html?Queue=Math-Big>
 (requires login).
 We will be notified, and then you'll automatically be notified of progress on
@@ -908,25 +907,25 @@ You can also look for information at:
 
 =over 4
 
+=item * GitHub
+
+L<https://github.com/pjacklam/p5-Math-Big>
+
 =item * RT: CPAN's request tracker
 
-L<https://rt.cpan.org/Public/Dist/Display.html?Name=Math-Big>
+L<https://rt.cpan.org/Dist/Display.html?Name=Math-Big>
 
-=item * AnnoCPAN: Annotated CPAN documentation
+=item * MetaCPAN
 
-L<http://annocpan.org/dist/Math-Big>
-
-=item * CPAN Ratings
-
-L<http://cpanratings.perl.org/dist/Math-Big>
-
-=item * Search CPAN
-
-L<http://search.cpan.org/dist/Math-Big/>
+L<https://metacpan.org/release/Math-Big>
 
 =item * CPAN Testers Matrix
 
 L<http://matrix.cpantesters.org/?dist=Math-Big>
+
+=item * CPAN Ratings
+
+L<https://cpanratings.perl.org/dist/Math-Big>
 
 =back
 
@@ -945,7 +944,7 @@ Tels http://bloodgate.com 2001-2007.
 
 =item *
 
-Peter John Acklam E<lt>pjacklam@online.noE<gt> 2016.
+Peter John Acklam E<lt>pjacklam@gmail.comE<gt> 2016-.
 
 =back
 
