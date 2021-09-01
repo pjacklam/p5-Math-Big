@@ -12,7 +12,7 @@ use Math::BigInt '1.97';
 use Math::BigFloat;
 use Exporter;
 
-our $VERSION   = '1.15';
+our $VERSION   = '1.16';
 our @ISA       = qw( Exporter );
 our @EXPORT_OK = qw( primes fibonacci base to_base hailstone factorial
                      euler bernoulli pi log

@@ -13,7 +13,7 @@ use Math::BigFloat;
 use Math::Big;
 use Exporter;
 
-our $VERSION   = '1.15';
+our $VERSION   = '1.16';
 our @ISA       = qw( Exporter );
 our @EXPORT_OK = qw( wheel factors_wheel
                   );
