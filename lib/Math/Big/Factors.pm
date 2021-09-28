@@ -247,7 +247,7 @@ Factor a number into its prime factors and return a list of factors.
 =head1 BUGS
 
 Please report any bugs or feature requests to
-C<bug-math-bigrat at rt.cpan.org>, or through the web interface at
+C<bug-math-big at rt.cpan.org>, or through the web interface at
 L<https://rt.cpan.org/Ticket/Create.html?Queue=Math-Big>
 (requires login).
 We will be notified, and then you'll automatically be notified of progress on
